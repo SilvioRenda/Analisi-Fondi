@@ -57,39 +57,147 @@ const Navbar = () => (
   </nav>
 );
 
-// Search Component
-const SearchBar = ({ onSearch, isLoading }) => {
+// Search Component with Autocomplete
+const SearchBar = ({ onSearch, isLoading, onSelectSymbol }) => {
   const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = useRef(null);
+  const suggestionsRef = useRef(null);
+
+  // Debounced autocomplete
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (query.length >= 1) {
+        try {
+          const res = await axios.get(`${API}/autocomplete?q=${encodeURIComponent(query)}`);
+          setSuggestions(res.data);
+          setShowSuggestions(true);
+          setSelectedIndex(-1);
+        } catch (err) {
+          console.error("Autocomplete error:", err);
+        }
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target) &&
+          inputRef.current && !inputRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleKeyDown = (e) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex(prev => Math.max(prev - 1, -1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(suggestions[selectedIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = (suggestion) => {
+    setQuery(suggestion.symbol);
+    setShowSuggestions(false);
+    onSelectSymbol(suggestion.symbol);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
+      setShowSuggestions(false);
       onSearch(query.trim());
     }
   };
 
+  const typeColors = {
+    stock: "bg-blue-100 text-blue-700",
+    etf: "bg-purple-100 text-purple-700",
+    fund: "bg-amber-100 text-amber-700",
+    bond: "bg-emerald-100 text-emerald-700"
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="relative" data-testid="search-form">
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-        <Input
-          type="text"
-          placeholder="Cerca per simbolo, nome o ISIN (es. AAPL, Apple, US0378331005)"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pl-12 pr-4 h-14 text-lg bg-white border-slate-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl shadow-sm"
-          data-testid="search-input"
-        />
-        <Button 
-          type="submit" 
-          disabled={isLoading || !query.trim()}
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 rounded-lg"
-          data-testid="search-button"
+    <div className="relative" data-testid="search-form">
+      <form onSubmit={handleSubmit}>
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+          <Input
+            ref={inputRef}
+            type="text"
+            placeholder="Cerca per simbolo, nome o ISIN (es. AAPL, Apple, US0378331005)"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => query.length >= 1 && suggestions.length > 0 && setShowSuggestions(true)}
+            className="pl-12 pr-24 h-14 text-lg bg-white border-slate-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl shadow-sm"
+            data-testid="search-input"
+          />
+          <Button 
+            type="submit" 
+            disabled={isLoading || !query.trim()}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 rounded-lg"
+            data-testid="search-button"
+          >
+            {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Analizza"}
+          </Button>
+        </div>
+      </form>
+
+      {/* Autocomplete Suggestions */}
+      {showSuggestions && suggestions.length > 0 && (
+        <div 
+          ref={suggestionsRef}
+          className="absolute z-50 w-full mt-2 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden"
+          data-testid="autocomplete-suggestions"
         >
-          {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Cerca"}
-        </Button>
-      </div>
-    </form>
+          {suggestions.map((suggestion, index) => (
+            <div
+              key={suggestion.symbol}
+              className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${
+                index === selectedIndex ? 'bg-blue-50' : 'hover:bg-slate-50'
+              }`}
+              onClick={() => handleSelectSuggestion(suggestion)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                  <span className="font-bold text-slate-600 text-sm">{suggestion.symbol.slice(0, 2)}</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-900">{suggestion.symbol}</span>
+                    <Badge className={`text-xs ${typeColors[suggestion.type] || typeColors.stock}`}>
+                      {suggestion.type?.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-slate-500">{suggestion.name}</p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
