@@ -345,41 +345,110 @@ async def remove_from_watchlist(symbol: str):
         raise HTTPException(status_code=404, detail="Not found in watchlist")
     return {"message": "Removed from watchlist"}
 
-# Compare endpoint
+# Compare endpoint - Base 100 rebased chart data
 @api_router.get("/compare")
-async def compare_instruments(symbols: str = Query(..., description="Comma-separated symbols")):
-    """Compare multiple instruments"""
+async def compare_instruments(
+    symbols: str = Query(..., description="Comma-separated symbols"),
+    period: str = Query("1mo", description="Time period: 1mo, 3mo, 6mo, 1y, 2y, 5y")
+):
+    """Compare multiple instruments with base 100 normalization"""
     symbol_list = [s.strip().upper() for s in symbols.split(',')]
     
-    if len(symbol_list) < 2:
-        raise HTTPException(status_code=400, detail="At least 2 symbols required")
-    if len(symbol_list) > 5:
-        raise HTTPException(status_code=400, detail="Maximum 5 symbols allowed")
+    if len(symbol_list) < 1:
+        raise HTTPException(status_code=400, detail="At least 1 symbol required")
+    if len(symbol_list) > 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 symbols allowed")
     
-    results = []
+    # Convert period to days
+    period_days = {
+        "1mo": 30,
+        "3mo": 90,
+        "6mo": 180,
+        "1y": 365,
+        "2y": 730,
+        "5y": 1825
+    }
+    days = period_days.get(period, 30)
+    
+    # Generate historical data for each symbol
+    all_histories = {}
+    symbol_info = {}
+    
     for symbol in symbol_list:
+        history = generate_historical_data(symbol, days)
+        all_histories[symbol] = history
+        
         if symbol in SAMPLE_INSTRUMENTS:
-            info = SAMPLE_INSTRUMENTS[symbol]
+            symbol_info[symbol] = SAMPLE_INSTRUMENTS[symbol]
         else:
-            info = {"name": f"{symbol} Stock", "type": "stock", "currency": "USD"}
-        
-        price_data = generate_price_data(symbol)
-        
-        results.append({
-            "symbol": symbol,
-            "name": info["name"],
-            "price": price_data["price"],
-            "change_percent": price_data["change_percent"],
-            "market_cap": price_data["market_cap"],
-            "pe_ratio": price_data["pe_ratio"],
-            "dividend_yield": price_data["dividend_yield"],
-            "beta": round(random.uniform(0.5, 2), 2),
-            "week_52_high": price_data["week_52_high"],
-            "week_52_low": price_data["week_52_low"],
-            "currency": info.get("currency", "USD")
-        })
+            symbol_info[symbol] = {"name": f"{symbol} Stock", "type": "stock"}
     
-    return results
+    # Normalize to base 100
+    # Find the first price for each symbol and calculate rebased values
+    base_prices = {}
+    for symbol, history in all_histories.items():
+        if history:
+            base_prices[symbol] = history[0]["close"]
+    
+    # Build the chart data with all symbols aligned by date
+    chart_data = []
+    
+    # Use the first symbol's dates as reference
+    reference_symbol = symbol_list[0]
+    reference_history = all_histories[reference_symbol]
+    
+    for i, day_data in enumerate(reference_history):
+        point = {"date": day_data["date"]}
+        
+        for symbol in symbol_list:
+            if i < len(all_histories[symbol]):
+                close_price = all_histories[symbol][i]["close"]
+                base_price = base_prices[symbol]
+                # Rebase to 100
+                rebased_value = (close_price / base_price) * 100
+                point[symbol] = round(rebased_value, 2)
+        
+        chart_data.append(point)
+    
+    # Calculate performance summary
+    performance = []
+    for symbol in symbol_list:
+        history = all_histories[symbol]
+        if history and len(history) > 0:
+            start_price = history[0]["close"]
+            end_price = history[-1]["close"]
+            total_return = ((end_price - start_price) / start_price) * 100
+            
+            # Calculate volatility (standard deviation of daily returns)
+            daily_returns = []
+            for i in range(1, len(history)):
+                prev_close = history[i-1]["close"]
+                curr_close = history[i]["close"]
+                daily_return = (curr_close - prev_close) / prev_close
+                daily_returns.append(daily_return)
+            
+            if daily_returns:
+                import statistics
+                volatility = statistics.stdev(daily_returns) * 100 * (252 ** 0.5)  # Annualized
+            else:
+                volatility = 0
+            
+            performance.append({
+                "symbol": symbol,
+                "name": symbol_info[symbol]["name"],
+                "type": symbol_info[symbol].get("type", "stock"),
+                "start_value": 100,
+                "end_value": round((end_price / start_price) * 100, 2),
+                "total_return": round(total_return, 2),
+                "volatility": round(volatility, 2)
+            })
+    
+    return {
+        "chart_data": chart_data,
+        "symbols": symbol_list,
+        "period": period,
+        "performance": performance
+    }
 
 # Include the router in the main app
 app.include_router(api_router)
