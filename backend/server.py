@@ -204,42 +204,33 @@ async def search_instruments(q: str = Query(..., min_length=1)):
 @api_router.get("/quote/{symbol}", response_model=QuoteData)
 async def get_quote(symbol: str):
     """Get current quote for a symbol"""
-    try:
-        ticker = yf.Ticker(symbol.upper())
-        info = ticker.info
-        
-        if not info or not info.get('symbol'):
-            raise HTTPException(status_code=404, detail="Symbol not found")
-        
-        # Get current price data
-        current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose', 0)
-        previous_close = info.get('previousClose') or info.get('regularMarketPreviousClose', current_price)
-        
-        change = current_price - previous_close if previous_close else 0
-        change_percent = (change / previous_close * 100) if previous_close else 0
-        
-        return QuoteData(
-            symbol=info.get('symbol', symbol.upper()),
-            name=info.get('longName') or info.get('shortName', symbol.upper()),
-            price=round(current_price, 2),
-            change=round(change, 2),
-            change_percent=round(change_percent, 2),
-            open=info.get('open') or info.get('regularMarketOpen'),
-            high=info.get('dayHigh') or info.get('regularMarketDayHigh'),
-            low=info.get('dayLow') or info.get('regularMarketDayLow'),
-            volume=info.get('volume') or info.get('regularMarketVolume'),
-            market_cap=info.get('marketCap'),
-            pe_ratio=info.get('trailingPE'),
-            dividend_yield=info.get('dividendYield'),
-            week_52_high=info.get('fiftyTwoWeekHigh'),
-            week_52_low=info.get('fiftyTwoWeekLow'),
-            currency=info.get('currency', 'USD')
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Quote error for {symbol}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    symbol = symbol.upper()
+    
+    if symbol not in SAMPLE_INSTRUMENTS:
+        # Generate data for unknown symbol
+        info = {"name": f"{symbol} Stock", "type": "stock", "currency": "USD"}
+    else:
+        info = SAMPLE_INSTRUMENTS[symbol]
+    
+    price_data = generate_price_data(symbol)
+    
+    return QuoteData(
+        symbol=symbol,
+        name=info["name"],
+        price=price_data["price"],
+        change=price_data["change"],
+        change_percent=price_data["change_percent"],
+        open=price_data["open"],
+        high=price_data["high"],
+        low=price_data["low"],
+        volume=price_data["volume"],
+        market_cap=price_data["market_cap"],
+        pe_ratio=price_data["pe_ratio"],
+        dividend_yield=price_data["dividend_yield"],
+        week_52_high=price_data["week_52_high"],
+        week_52_low=price_data["week_52_low"],
+        currency=info.get("currency", "USD")
+    )
 
 @api_router.get("/history/{symbol}", response_model=List[HistoricalData])
 async def get_history(symbol: str, period: str = "1mo"):
