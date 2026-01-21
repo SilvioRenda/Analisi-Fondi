@@ -254,60 +254,57 @@ async def get_history(symbol: str, period: str = "1mo"):
 @api_router.get("/details/{symbol}")
 async def get_details(symbol: str):
     """Get detailed information for a symbol"""
-    try:
-        ticker = yf.Ticker(symbol.upper())
-        info = ticker.info
-        
-        if not info or not info.get('symbol'):
-            raise HTTPException(status_code=404, detail="Symbol not found")
-        
-        return {
-            "symbol": info.get('symbol'),
-            "name": info.get('longName') or info.get('shortName'),
-            "description": info.get('longBusinessSummary'),
-            "sector": info.get('sector'),
-            "industry": info.get('industry'),
-            "country": info.get('country'),
-            "website": info.get('website'),
-            "employees": info.get('fullTimeEmployees'),
-            "instrument_type": get_instrument_type(info),
-            "exchange": info.get('exchange'),
-            "currency": info.get('currency'),
-            "isin": info.get('isin'),
-            # Valuation metrics
-            "market_cap": info.get('marketCap'),
-            "enterprise_value": info.get('enterpriseValue'),
-            "pe_ratio": info.get('trailingPE'),
-            "forward_pe": info.get('forwardPE'),
-            "peg_ratio": info.get('pegRatio'),
-            "price_to_book": info.get('priceToBook'),
-            "price_to_sales": info.get('priceToSalesTrailing12Months'),
-            # Financial metrics
-            "revenue": info.get('totalRevenue'),
-            "gross_profit": info.get('grossProfits'),
-            "ebitda": info.get('ebitda'),
-            "net_income": info.get('netIncomeToCommon'),
-            "profit_margin": info.get('profitMargins'),
-            "operating_margin": info.get('operatingMargins'),
-            "roe": info.get('returnOnEquity'),
-            "roa": info.get('returnOnAssets'),
-            # Dividend info
-            "dividend_rate": info.get('dividendRate'),
-            "dividend_yield": info.get('dividendYield'),
-            "payout_ratio": info.get('payoutRatio'),
-            "ex_dividend_date": info.get('exDividendDate'),
-            # Trading info
-            "beta": info.get('beta'),
-            "avg_volume": info.get('averageVolume'),
-            "avg_volume_10d": info.get('averageVolume10days'),
-            "shares_outstanding": info.get('sharesOutstanding'),
-            "float_shares": info.get('floatShares'),
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Details error for {symbol}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    symbol = symbol.upper()
+    
+    if symbol not in SAMPLE_INSTRUMENTS:
+        info = {"name": f"{symbol} Stock", "type": "stock", "currency": "USD", "sector": "Unknown"}
+    else:
+        info = SAMPLE_INSTRUMENTS[symbol]
+    
+    price_data = generate_price_data(symbol)
+    
+    return {
+        "symbol": symbol,
+        "name": info["name"],
+        "description": f"{info['name']} is a leading company in the {info.get('sector', 'financial')} sector. This instrument offers investors exposure to {info.get('type', 'equity')} markets.",
+        "sector": info.get("sector"),
+        "industry": info.get("sector"),
+        "country": "United States",
+        "website": f"https://finance.yahoo.com/quote/{symbol}",
+        "employees": random.randint(10000, 200000) if info.get("type") == "stock" else None,
+        "instrument_type": info.get("type", "stock"),
+        "exchange": info.get("exchange", "NYSE"),
+        "currency": info.get("currency", "USD"),
+        "isin": info.get("isin"),
+        # Valuation metrics
+        "market_cap": price_data["market_cap"],
+        "enterprise_value": price_data["market_cap"] * random.uniform(0.9, 1.2),
+        "pe_ratio": price_data["pe_ratio"],
+        "forward_pe": price_data["pe_ratio"] * random.uniform(0.8, 1.1),
+        "peg_ratio": round(random.uniform(0.5, 3), 2),
+        "price_to_book": round(random.uniform(1, 15), 2),
+        "price_to_sales": round(random.uniform(0.5, 10), 2),
+        # Financial metrics
+        "revenue": price_data["market_cap"] * random.uniform(0.1, 0.5),
+        "gross_profit": price_data["market_cap"] * random.uniform(0.05, 0.2),
+        "ebitda": price_data["market_cap"] * random.uniform(0.03, 0.15),
+        "net_income": price_data["market_cap"] * random.uniform(0.01, 0.1),
+        "profit_margin": round(random.uniform(0.05, 0.3), 4),
+        "operating_margin": round(random.uniform(0.1, 0.4), 4),
+        "roe": round(random.uniform(0.1, 0.4), 4),
+        "roa": round(random.uniform(0.05, 0.2), 4),
+        # Dividend info
+        "dividend_rate": round(random.uniform(0, 5), 2),
+        "dividend_yield": price_data["dividend_yield"],
+        "payout_ratio": round(random.uniform(0.1, 0.6), 4),
+        "ex_dividend_date": None,
+        # Trading info
+        "beta": round(random.uniform(0.5, 2), 2),
+        "avg_volume": price_data["volume"],
+        "avg_volume_10d": price_data["volume"] * random.uniform(0.8, 1.2),
+        "shares_outstanding": int(price_data["market_cap"] / price_data["price"]),
+        "float_shares": int(price_data["market_cap"] / price_data["price"] * 0.9),
+    }
 
 # Watchlist endpoints
 @api_router.get("/watchlist", response_model=List[WatchlistItem])
