@@ -466,6 +466,96 @@ async def get_history(symbol: str, period: str = "1mo"):
     
     return [HistoricalData(**h) for h in history]
 
+@api_router.get("/technical/{symbol}")
+async def get_technical_analysis(symbol: str, period: str = "6mo"):
+    """Get technical analysis data with moving averages and drawdown"""
+    symbol = symbol.upper()
+    
+    # Convert period to days (need more data for moving averages)
+    period_days = {
+        "1mo": 60,    # Need extra days for MAs
+        "3mo": 120,
+        "6mo": 250,
+        "1y": 450,
+        "2y": 800,
+        "5y": 2000
+    }
+    
+    days = period_days.get(period, 250)
+    history = generate_historical_data(symbol, days)
+    
+    # Extract close prices
+    dates = [h["date"] for h in history]
+    closes = [h["close"] for h in history]
+    
+    # Calculate Moving Averages
+    sma_20 = calculate_sma(closes, 20)
+    sma_50 = calculate_sma(closes, 50)
+    sma_200 = calculate_sma(closes, 200)
+    ema_20 = calculate_ema(closes, 20)
+    ema_50 = calculate_ema(closes, 50)
+    
+    # Calculate Drawdown
+    drawdown_data = calculate_drawdown(closes)
+    max_dd_stats = calculate_max_drawdown(closes)
+    
+    # Determine Golden/Death Cross signals
+    signals = []
+    for i in range(1, len(closes)):
+        if sma_50[i] is not None and sma_200[i] is not None and sma_50[i-1] is not None and sma_200[i-1] is not None:
+            # Golden Cross: SMA50 crosses above SMA200
+            if sma_50[i-1] <= sma_200[i-1] and sma_50[i] > sma_200[i]:
+                signals.append({"date": dates[i], "type": "golden_cross", "description": "Golden Cross - Bullish"})
+            # Death Cross: SMA50 crosses below SMA200
+            elif sma_50[i-1] >= sma_200[i-1] and sma_50[i] < sma_200[i]:
+                signals.append({"date": dates[i], "type": "death_cross", "description": "Death Cross - Bearish"})
+    
+    # Current trend indicator
+    current_trend = "neutral"
+    if sma_50[-1] is not None and sma_200[-1] is not None:
+        if sma_50[-1] > sma_200[-1]:
+            current_trend = "bullish"
+        else:
+            current_trend = "bearish"
+    
+    # Build chart data (limit to requested period display)
+    display_days = {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825}.get(period, 180)
+    start_idx = max(0, len(closes) - display_days)
+    
+    chart_data = []
+    for i in range(start_idx, len(closes)):
+        chart_data.append({
+            "date": dates[i],
+            "close": closes[i],
+            "sma_20": sma_20[i],
+            "sma_50": sma_50[i],
+            "sma_200": sma_200[i],
+            "ema_20": ema_20[i],
+            "ema_50": ema_50[i],
+            "drawdown": drawdown_data[i]["drawdown"],
+            "peak": drawdown_data[i]["peak"]
+        })
+    
+    return {
+        "symbol": symbol,
+        "period": period,
+        "chart_data": chart_data,
+        "signals": signals[-5:] if signals else [],  # Last 5 signals
+        "current_trend": current_trend,
+        "max_drawdown": max_dd_stats,
+        "current_drawdown": drawdown_data[-1]["drawdown"] if drawdown_data else 0,
+        "summary": {
+            "current_price": closes[-1],
+            "sma_20": sma_20[-1],
+            "sma_50": sma_50[-1],
+            "sma_200": sma_200[-1],
+            "ema_20": ema_20[-1],
+            "ema_50": ema_50[-1],
+            "price_vs_sma50": round(((closes[-1] / sma_50[-1]) - 1) * 100, 2) if sma_50[-1] else None,
+            "price_vs_sma200": round(((closes[-1] / sma_200[-1]) - 1) * 100, 2) if sma_200[-1] else None,
+        }
+    }
+
 @api_router.get("/details/{symbol}")
 async def get_details(symbol: str):
     """Get detailed information for a symbol"""
