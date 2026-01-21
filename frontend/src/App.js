@@ -1019,26 +1019,34 @@ function App() {
   const handleSearch = async (query) => {
     setIsSearching(true);
     try {
-      const res = await axios.get(`${API}/search?q=${encodeURIComponent(query)}`);
-      // Get quotes for search results
-      const resultsWithQuotes = await Promise.all(
-        res.data.map(async (result) => {
-          try {
-            const quoteRes = await axios.get(`${API}/quote/${result.symbol}`);
-            return { ...result, ...quoteRes.data };
-          } catch {
-            return result;
-          }
-        })
-      );
-      setSearchResults(resultsWithQuotes);
-      setSelectedSymbol(null);
+      // For single instrument search, go directly to detail view
+      const res = await axios.get(`${API}/instrument/${encodeURIComponent(query)}`);
+      setSelectedSymbol(query.toUpperCase());
+      setSearchResults([]);
     } catch (err) {
       console.error("Search error:", err);
-      setSearchResults([]);
+      // Fallback to search if instrument not found
+      try {
+        const searchRes = await axios.get(`${API}/search?q=${encodeURIComponent(query)}`);
+        if (searchRes.data.length === 1) {
+          setSelectedSymbol(searchRes.data[0].symbol);
+          setSearchResults([]);
+        } else {
+          setSearchResults(searchRes.data);
+          setSelectedSymbol(null);
+        }
+      } catch {
+        setSearchResults([]);
+      }
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleSelectSymbol = (symbol) => {
+    setSelectedSymbol(symbol);
+    setSearchResults([]);
+    setActiveTab("search");
   };
 
   const handleAddToWatchlist = async (item) => {
