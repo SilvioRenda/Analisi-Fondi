@@ -220,6 +220,132 @@ const PriceChange = ({ change, changePercent, size = "default" }) => {
   );
 };
 
+// Mini Sparkline Component
+const Sparkline = ({ data, positive = true, width = 80, height = 30 }) => {
+  if (!data || data.length === 0) return null;
+  
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  
+  const points = data.map((value, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((value - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  const color = positive ? "#16a34a" : "#dc2626";
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        points={points}
+      />
+    </svg>
+  );
+};
+
+// Analyst Rating Badge
+const AnalystRating = ({ rating }) => {
+  if (!rating) return null;
+  
+  const ratingColors = {
+    "Strong Buy": "bg-green-600 text-white",
+    "Buy": "bg-green-500 text-white",
+    "Hold": "bg-amber-500 text-white",
+    "Neutral": "bg-slate-500 text-white",
+    "Sell": "bg-red-500 text-white",
+    "Strong Sell": "bg-red-600 text-white",
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Badge className={ratingColors[rating.rating] || "bg-slate-500 text-white"}>
+        {rating.rating}
+      </Badge>
+      {rating.target_price && (
+        <span className="text-sm text-slate-600">
+          Target: <span className="font-semibold">${rating.target_price}</span>
+          {rating.upside && (
+            <span className={`ml-1 ${rating.upside >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ({rating.upside >= 0 ? '+' : ''}{rating.upside}%)
+            </span>
+          )}
+        </span>
+      )}
+    </div>
+  );
+};
+
+// Trending Instruments Component
+const TrendingSection = ({ onSelect }) => {
+  const [trending, setTrending] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTrending = async () => {
+      try {
+        const res = await axios.get(`${API}/trending`);
+        setTrending(res.data);
+      } catch (err) {
+        console.error("Error fetching trending:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTrending();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-24 bg-slate-100 rounded-xl animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-4">
+        <Flame className="h-5 w-5 text-orange-500" />
+        <h3 className="font-semibold text-slate-700">Strumenti Popolari</h3>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {trending.slice(0, 5).map((item) => (
+          <div
+            key={item.symbol}
+            onClick={() => onSelect(item.symbol)}
+            className="bg-white rounded-xl border border-slate-200 p-4 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all"
+            data-testid={`trending-${item.symbol}`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-bold text-slate-900">{item.symbol}</span>
+              <Sparkline 
+                data={item.sparkline} 
+                positive={item.change_percent >= 0}
+                width={50}
+                height={20}
+              />
+            </div>
+            <p className="text-xs text-slate-500 truncate mb-2">{item.name}</p>
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-sm tabular-nums">${item.price?.toFixed(2)}</span>
+              <span className={`text-xs font-medium ${item.change_percent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {item.change_percent >= 0 ? '+' : ''}{item.change_percent?.toFixed(2)}%
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Instrument Card Component
 const InstrumentCard = ({ data, onSelect, onAddToWatchlist, isInWatchlist, onRemoveFromWatchlist }) => {
   const typeColors = {
