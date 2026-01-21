@@ -483,30 +483,47 @@ const Watchlist = ({ items, onSelect, onRemove, onRefresh, loading }) => {
   );
 };
 
-// Compare View Component
+// Compare View Component - Base 100 Chart
 const CompareView = ({ symbols, onRemoveSymbol, onAddSymbol }) => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [newSymbol, setNewSymbol] = useState("");
+  const [period, setPeriod] = useState("1mo");
+
+  // Colors for different lines
+  const lineColors = [
+    "#3B82F6", // blue
+    "#10B981", // green  
+    "#F59E0B", // amber
+    "#EF4444", // red
+    "#8B5CF6", // purple
+    "#EC4899", // pink
+    "#06B6D4", // cyan
+    "#F97316", // orange
+    "#6366F1", // indigo
+    "#84CC16", // lime
+  ];
 
   const fetchComparison = useCallback(async () => {
-    if (symbols.length < 2) return;
+    if (symbols.length < 1) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/compare?symbols=${symbols.join(',')}`);
+      const res = await axios.get(`${API}/compare?symbols=${symbols.join(',')}&period=${period}`);
       setData(res.data);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [symbols]);
+  }, [symbols, period]);
 
   useEffect(() => {
-    if (symbols.length >= 2) {
+    if (symbols.length >= 1) {
       fetchComparison();
+    } else {
+      setData(null);
     }
-  }, [fetchComparison, symbols]);
+  }, [fetchComparison, symbols, period]);
 
   const handleAddSymbol = (e) => {
     e.preventDefault();
@@ -516,30 +533,34 @@ const CompareView = ({ symbols, onRemoveSymbol, onAddSymbol }) => {
     }
   };
 
-  if (symbols.length < 2) {
+  const periods = [
+    { value: "1mo", label: "1M" },
+    { value: "3mo", label: "3M" },
+    { value: "6mo", label: "6M" },
+    { value: "1y", label: "1A" },
+    { value: "2y", label: "2A" },
+    { value: "5y", label: "5A" },
+  ];
+
+  if (symbols.length < 1) {
     return (
       <Card className="bg-white border-slate-200" data-testid="compare-empty">
         <CardContent className="p-8 text-center">
           <ArrowUpDown className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500">Aggiungi almeno 2 strumenti per confrontarli</p>
-          <form onSubmit={handleAddSymbol} className="mt-4 flex gap-2 max-w-xs mx-auto">
+          <p className="text-slate-600 font-medium mb-2">Confronto Performance Base 100</p>
+          <p className="text-slate-500 text-sm mb-4">Aggiungi strumenti per confrontare le performance normalizzate</p>
+          <form onSubmit={handleAddSymbol} className="flex gap-2 max-w-sm mx-auto">
             <Input
-              placeholder="Simbolo (es. AAPL)"
+              placeholder="Simbolo (es. AAPL, SPY, MSFT)"
               value={newSymbol}
               onChange={(e) => setNewSymbol(e.target.value)}
+              className="flex-1"
               data-testid="compare-input"
             />
-            <Button type="submit" data-testid="compare-add-btn">
-              <Plus className="h-4 w-4" />
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700" data-testid="compare-add-btn">
+              <Plus className="h-4 w-4 mr-1" /> Aggiungi
             </Button>
           </form>
-          <div className="flex gap-2 justify-center mt-3">
-            {symbols.map((s) => (
-              <Badge key={s} variant="secondary" className="cursor-pointer" onClick={() => onRemoveSymbol(s)}>
-                {s} <X className="h-3 w-3 ml-1" />
-              </Badge>
-            ))}
-          </div>
         </CardContent>
       </Card>
     );
@@ -547,78 +568,172 @@ const CompareView = ({ symbols, onRemoveSymbol, onAddSymbol }) => {
 
   return (
     <Card className="bg-white border-slate-200" data-testid="compare-view">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">Confronto Strumenti</CardTitle>
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <CardTitle className="text-xl">Confronto Performance Base 100</CardTitle>
+            <CardDescription>Tutti gli strumenti normalizzati a 100 all'inizio del periodo</CardDescription>
+          </div>
           <form onSubmit={handleAddSymbol} className="flex gap-2">
             <Input
               placeholder="Aggiungi simbolo"
               value={newSymbol}
               onChange={(e) => setNewSymbol(e.target.value)}
-              className="w-32"
-              disabled={symbols.length >= 5}
+              className="w-36"
+              disabled={symbols.length >= 10}
             />
-            <Button type="submit" size="sm" disabled={symbols.length >= 5}>
+            <Button type="submit" size="sm" disabled={symbols.length >= 10} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4" />
             </Button>
           </form>
         </div>
-        <div className="flex gap-2 mt-2">
-          {symbols.map((s) => (
-            <Badge key={s} variant="secondary" className="cursor-pointer" onClick={() => onRemoveSymbol(s)}>
+        
+        {/* Symbol badges */}
+        <div className="flex flex-wrap gap-2 mt-3">
+          {symbols.map((s, index) => (
+            <Badge 
+              key={s} 
+              className="cursor-pointer px-3 py-1 text-white"
+              style={{ backgroundColor: lineColors[index % lineColors.length] }}
+              onClick={() => onRemoveSymbol(s)}
+            >
               {s} <X className="h-3 w-3 ml-1" />
             </Badge>
           ))}
         </div>
+
+        {/* Period selector */}
+        <div className="flex gap-1 mt-4">
+          {periods.map((p) => (
+            <Button
+              key={p.value}
+              variant={period === p.value ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPeriod(p.value)}
+              className={period === p.value ? "bg-blue-600 hover:bg-blue-700" : ""}
+              data-testid={`compare-period-${p.value}`}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
       </CardHeader>
+      
       <CardContent>
         {loading ? (
-          <div className="animate-pulse space-y-2">
-            {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-slate-100 rounded"></div>)}
+          <div className="h-80 flex items-center justify-center">
+            <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full data-table">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-left py-3 px-2">Simbolo</th>
-                  <th className="text-right py-3 px-2">Prezzo</th>
-                  <th className="text-right py-3 px-2">Variazione</th>
-                  <th className="text-right py-3 px-2">Market Cap</th>
-                  <th className="text-right py-3 px-2">P/E</th>
-                  <th className="text-right py-3 px-2">Div. Yield</th>
-                  <th className="text-right py-3 px-2">Beta</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((item) => (
-                  <tr key={item.symbol} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-2">
-                      <div>
-                        <span className="font-semibold">{item.symbol}</span>
-                        <p className="text-xs text-slate-500 truncate max-w-[150px]">{item.name}</p>
-                      </div>
-                    </td>
-                    <td className="text-right py-3 px-2 font-medium tabular-nums">
-                      {formatCurrency(item.price, item.currency)}
-                    </td>
-                    <td className="text-right py-3 px-2">
-                      <span className={item.change_percent >= 0 ? 'text-green-600' : 'text-red-600'}>
-                        {formatPercent(item.change_percent)}
-                      </span>
-                    </td>
-                    <td className="text-right py-3 px-2 tabular-nums">{formatLargeNumber(item.market_cap)}</td>
-                    <td className="text-right py-3 px-2 tabular-nums">{formatNumber(item.pe_ratio)}</td>
-                    <td className="text-right py-3 px-2 tabular-nums">
-                      {item.dividend_yield ? formatPercent(item.dividend_yield * 100) : "N/A"}
-                    </td>
-                    <td className="text-right py-3 px-2 tabular-nums">{formatNumber(item.beta)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        ) : data ? (
+          <>
+            {/* Chart */}
+            <div className="h-80 mb-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.chart_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E2E8F0' }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                    }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tickLine={false}
+                    axisLine={false}
+                    domain={['auto', 'auto']}
+                    tickFormatter={(value) => value.toFixed(0)}
+                  />
+                  <RechartsTooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #E2E8F0', 
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                    formatter={(value, name) => [value.toFixed(2), name]}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString('it-IT', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  />
+                  {/* Reference line at 100 */}
+                  <Line
+                    type="monotone"
+                    dataKey={() => 100}
+                    stroke="#CBD5E1"
+                    strokeDasharray="5 5"
+                    strokeWidth={1}
+                    dot={false}
+                    name="Base 100"
+                  />
+                  {symbols.map((symbol, index) => (
+                    <Line
+                      key={symbol}
+                      type="monotone"
+                      dataKey={symbol}
+                      stroke={lineColors[index % lineColors.length]}
+                      strokeWidth={2}
+                      dot={false}
+                      name={symbol}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Performance Table */}
+            <div className="bg-slate-50 rounded-xl p-4">
+              <h4 className="font-semibold text-slate-700 mb-3">Riepilogo Performance</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full data-table text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-2 px-2 font-medium">Strumento</th>
+                      <th className="text-right py-2 px-2 font-medium">Valore Iniziale</th>
+                      <th className="text-right py-2 px-2 font-medium">Valore Finale</th>
+                      <th className="text-right py-2 px-2 font-medium">Rendimento</th>
+                      <th className="text-right py-2 px-2 font-medium">Volatilità Ann.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.performance?.map((item, index) => (
+                      <tr key={item.symbol} className="border-b border-slate-100">
+                        <td className="py-2 px-2">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: lineColors[index % lineColors.length] }}
+                            />
+                            <div>
+                              <span className="font-semibold">{item.symbol}</span>
+                              <p className="text-xs text-slate-500 truncate max-w-[120px]">{item.name}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-right py-2 px-2 tabular-nums">100,00</td>
+                        <td className="text-right py-2 px-2 tabular-nums font-medium">{formatNumber(item.end_value)}</td>
+                        <td className="text-right py-2 px-2">
+                          <span className={`font-semibold ${item.total_return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatPercent(item.total_return)}
+                          </span>
+                        </td>
+                        <td className="text-right py-2 px-2 tabular-nums text-slate-600">
+                          {formatNumber(item.volatility)}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        ) : null}
       </CardContent>
     </Card>
   );
