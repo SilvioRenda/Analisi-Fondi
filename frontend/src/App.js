@@ -625,19 +625,27 @@ const InstrumentDetailView = ({ symbol, onClose, onAddToWatchlist, isInWatchlist
         </CardContent>
       </Card>
 
-      {/* Chart Card */}
+      {/* Chart Card with Tabs */}
       <Card className="bg-white border-slate-200">
         <CardHeader className="pb-2">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg">Andamento Storico</CardTitle>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Tabs value={activeChart} onValueChange={setActiveChart} className="w-auto">
+                <TabsList className="h-9">
+                  <TabsTrigger value="price" className="text-xs px-3">Prezzo</TabsTrigger>
+                  <TabsTrigger value="technical" className="text-xs px-3">Analisi Tecnica</TabsTrigger>
+                  <TabsTrigger value="drawdown" className="text-xs px-3">Drawdown</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
             <div className="flex gap-1">
               {["1mo", "3mo", "6mo", "1y", "5y"].map((p) => (
                 <Button
                   key={p}
-                  variant={period === p ? "default" : "ghost"}
+                  variant={technicalPeriod === p ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setPeriod(p)}
-                  className={period === p ? "bg-blue-600" : ""}
+                  onClick={() => setTechnicalPeriod(p)}
+                  className={technicalPeriod === p ? "bg-blue-600" : ""}
                   data-testid={`period-${p}`}
                 >
                   {p.toUpperCase()}
@@ -647,48 +655,208 @@ const InstrumentDetailView = ({ symbol, onClose, onAddToWatchlist, isInWatchlist
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={history} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fontSize: 11, fill: '#64748B' }}
-                  tickLine={false}
-                  axisLine={{ stroke: '#E2E8F0' }}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
-                  }}
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#64748B' }}
-                  tickLine={false}
-                  axisLine={false}
-                  domain={['auto', 'auto']}
-                  tickFormatter={(value) => formatNumber(value, 0)}
-                />
-                <RechartsTooltip 
-                  contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                  formatter={(value) => [formatCurrency(value, data?.currency), 'Prezzo']}
-                  labelFormatter={(label) => new Date(label).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' })}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="close" 
-                  stroke="#3B82F6" 
-                  strokeWidth={2}
-                  fill="url(#colorPrice)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {/* Price Chart */}
+          {activeChart === "price" && (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={history} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E2E8F0' }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                    }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tickLine={false}
+                    axisLine={false}
+                    domain={['auto', 'auto']}
+                    tickFormatter={(value) => formatNumber(value, 0)}
+                  />
+                  <RechartsTooltip 
+                    contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                    formatter={(value) => [formatCurrency(value, data?.currency), 'Prezzo']}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="close" 
+                    stroke="#3B82F6" 
+                    strokeWidth={2}
+                    fill="url(#colorPrice)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Technical Analysis Chart */}
+          {activeChart === "technical" && technicalData && (
+            <>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={technicalData.chart_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 10, fill: '#64748B' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#E2E8F0' }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                      }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 11, fill: '#64748B' }}
+                      tickLine={false}
+                      axisLine={false}
+                      domain={['auto', 'auto']}
+                    />
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '12px' }}
+                      formatter={(value, name) => {
+                        const labels = {
+                          close: 'Prezzo',
+                          sma_20: 'SMA 20',
+                          sma_50: 'SMA 50',
+                          sma_200: 'SMA 200',
+                          ema_20: 'EMA 20',
+                          ema_50: 'EMA 50'
+                        };
+                        return [value ? formatNumber(value) : 'N/A', labels[name] || name];
+                      }}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Line type="monotone" dataKey="close" stroke="#1E293B" strokeWidth={2} dot={false} name="Prezzo" />
+                    <Line type="monotone" dataKey="sma_20" stroke="#F59E0B" strokeWidth={1.5} dot={false} name="SMA 20" strokeDasharray="0" />
+                    <Line type="monotone" dataKey="sma_50" stroke="#3B82F6" strokeWidth={1.5} dot={false} name="SMA 50" />
+                    <Line type="monotone" dataKey="sma_200" stroke="#10B981" strokeWidth={1.5} dot={false} name="SMA 200" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Technical Summary */}
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-slate-500 mb-1">SMA 50</p>
+                  <p className="font-semibold tabular-nums">{formatNumber(technicalData.summary?.sma_50)}</p>
+                  <p className={`text-xs ${technicalData.summary?.price_vs_sma50 >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {technicalData.summary?.price_vs_sma50 >= 0 ? '+' : ''}{formatNumber(technicalData.summary?.price_vs_sma50)}%
+                  </p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-slate-500 mb-1">SMA 200</p>
+                  <p className="font-semibold tabular-nums">{formatNumber(technicalData.summary?.sma_200)}</p>
+                  <p className={`text-xs ${technicalData.summary?.price_vs_sma200 >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {technicalData.summary?.price_vs_sma200 >= 0 ? '+' : ''}{formatNumber(technicalData.summary?.price_vs_sma200)}%
+                  </p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-slate-500 mb-1">Trend</p>
+                  <Badge className={technicalData.current_trend === 'bullish' ? 'bg-green-100 text-green-800' : technicalData.current_trend === 'bearish' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-800'}>
+                    {technicalData.current_trend === 'bullish' ? '📈 Rialzista' : technicalData.current_trend === 'bearish' ? '📉 Ribassista' : 'Neutrale'}
+                  </Badge>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-slate-500 mb-1">Segnali</p>
+                  {technicalData.signals?.length > 0 ? (
+                    <p className="text-xs font-medium">{technicalData.signals[technicalData.signals.length - 1]?.description}</p>
+                  ) : (
+                    <p className="text-xs text-slate-400">Nessun segnale recente</p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Drawdown Chart */}
+          {activeChart === "drawdown" && technicalData && (
+            <>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={technicalData.chart_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorDrawdown" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 11, fill: '#64748B' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#E2E8F0' }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                      }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 11, fill: '#64748B' }}
+                      tickLine={false}
+                      axisLine={false}
+                      domain={['auto', 0]}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <ReferenceLine y={0} stroke="#94A3B8" strokeDasharray="3 3" />
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                      formatter={(value) => [`${formatNumber(value)}%`, 'Drawdown']}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="drawdown" 
+                      stroke="#EF4444" 
+                      strokeWidth={2}
+                      fill="url(#colorDrawdown)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Drawdown Summary */}
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="bg-red-50 rounded-lg p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    <p className="text-xs text-red-600 font-medium">Max Drawdown</p>
+                  </div>
+                  <p className="text-2xl font-bold text-red-600 tabular-nums">
+                    {formatNumber(technicalData.max_drawdown?.max_drawdown)}%
+                  </p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-4 text-center">
+                  <p className="text-xs text-slate-500 mb-1">Drawdown Attuale</p>
+                  <p className={`text-2xl font-bold tabular-nums ${technicalData.current_drawdown < -10 ? 'text-red-600' : technicalData.current_drawdown < -5 ? 'text-amber-600' : 'text-slate-700'}`}>
+                    {formatNumber(technicalData.current_drawdown)}%
+                  </p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-4 text-center">
+                  <p className="text-xs text-slate-500 mb-1">Dal Picco</p>
+                  <p className="text-lg font-semibold text-slate-700">
+                    {technicalData.chart_data?.length > 0 && (
+                      formatCurrency(technicalData.chart_data[technicalData.chart_data.length - 1]?.peak, data?.currency)
+                    )}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
