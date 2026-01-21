@@ -80,18 +80,89 @@ class HistoricalData(BaseModel):
     close: float
     volume: int
 
-# Helper function to get instrument type
-def get_instrument_type(info: dict) -> str:
-    quote_type = info.get('quoteType', '').lower()
-    if quote_type == 'etf':
-        return 'etf'
-    elif quote_type == 'mutualfund':
-        return 'fund'
-    elif quote_type == 'equity':
-        return 'stock'
-    elif quote_type == 'bond':
-        return 'bond'
-    return 'stock'
+# Sample financial data for demo (fallback when API is rate limited)
+SAMPLE_INSTRUMENTS = {
+    "AAPL": {"name": "Apple Inc.", "type": "stock", "sector": "Technology", "currency": "USD", "isin": "US0378331005", "exchange": "NASDAQ"},
+    "MSFT": {"name": "Microsoft Corporation", "type": "stock", "sector": "Technology", "currency": "USD", "isin": "US5949181045", "exchange": "NASDAQ"},
+    "GOOGL": {"name": "Alphabet Inc.", "type": "stock", "sector": "Technology", "currency": "USD", "isin": "US02079K3059", "exchange": "NASDAQ"},
+    "AMZN": {"name": "Amazon.com Inc.", "type": "stock", "sector": "Consumer Cyclical", "currency": "USD", "isin": "US0231351067", "exchange": "NASDAQ"},
+    "TSLA": {"name": "Tesla Inc.", "type": "stock", "sector": "Consumer Cyclical", "currency": "USD", "isin": "US88160R1014", "exchange": "NASDAQ"},
+    "META": {"name": "Meta Platforms Inc.", "type": "stock", "sector": "Technology", "currency": "USD", "isin": "US30303M1027", "exchange": "NASDAQ"},
+    "NVDA": {"name": "NVIDIA Corporation", "type": "stock", "sector": "Technology", "currency": "USD", "isin": "US67066G1040", "exchange": "NASDAQ"},
+    "JPM": {"name": "JPMorgan Chase & Co.", "type": "stock", "sector": "Financial Services", "currency": "USD", "isin": "US46625H1005", "exchange": "NYSE"},
+    "V": {"name": "Visa Inc.", "type": "stock", "sector": "Financial Services", "currency": "USD", "isin": "US92826C8394", "exchange": "NYSE"},
+    "JNJ": {"name": "Johnson & Johnson", "type": "stock", "sector": "Healthcare", "currency": "USD", "isin": "US4781601046", "exchange": "NYSE"},
+    "SPY": {"name": "SPDR S&P 500 ETF Trust", "type": "etf", "sector": "Broad Market", "currency": "USD", "isin": "US78462F1030", "exchange": "NYSE"},
+    "QQQ": {"name": "Invesco QQQ Trust", "type": "etf", "sector": "Technology", "currency": "USD", "isin": "US46090E1038", "exchange": "NASDAQ"},
+    "VTI": {"name": "Vanguard Total Stock Market ETF", "type": "etf", "sector": "Broad Market", "currency": "USD", "isin": "US9229087690", "exchange": "NYSE"},
+    "IWM": {"name": "iShares Russell 2000 ETF", "type": "etf", "sector": "Small Cap", "currency": "USD", "isin": "US4642876555", "exchange": "NYSE"},
+    "EFA": {"name": "iShares MSCI EAFE ETF", "type": "etf", "sector": "International", "currency": "USD", "isin": "US4642874659", "exchange": "NYSE"},
+    "BND": {"name": "Vanguard Total Bond Market ETF", "type": "bond", "sector": "Bonds", "currency": "USD", "isin": "US9219378356", "exchange": "NYSE"},
+    "AGG": {"name": "iShares Core U.S. Aggregate Bond ETF", "type": "bond", "sector": "Bonds", "currency": "USD", "isin": "US4642872265", "exchange": "NYSE"},
+    "TLT": {"name": "iShares 20+ Year Treasury Bond ETF", "type": "bond", "sector": "Government Bonds", "currency": "USD", "isin": "US4642874329", "exchange": "NYSE"},
+    "VFIAX": {"name": "Vanguard 500 Index Fund Admiral", "type": "fund", "sector": "Large Blend", "currency": "USD", "isin": "US9229083632", "exchange": "MUTUAL"},
+    "FXAIX": {"name": "Fidelity 500 Index Fund", "type": "fund", "sector": "Large Blend", "currency": "USD", "isin": "US3160716052", "exchange": "MUTUAL"},
+}
+
+# Generate realistic price data
+def generate_price_data(symbol: str) -> dict:
+    base_prices = {
+        "AAPL": 178.50, "MSFT": 378.90, "GOOGL": 141.80, "AMZN": 178.25, "TSLA": 248.50,
+        "META": 505.75, "NVDA": 875.30, "JPM": 198.45, "V": 279.80, "JNJ": 156.20,
+        "SPY": 512.40, "QQQ": 438.60, "VTI": 268.30, "IWM": 198.75, "EFA": 78.90,
+        "BND": 72.45, "AGG": 98.60, "TLT": 92.30, "VFIAX": 485.20, "FXAIX": 178.50
+    }
+    
+    base_price = base_prices.get(symbol, 100 + random.uniform(0, 200))
+    change_pct = random.uniform(-3, 3)
+    change = base_price * change_pct / 100
+    current_price = base_price + change
+    
+    return {
+        "price": round(current_price, 2),
+        "change": round(change, 2),
+        "change_percent": round(change_pct, 2),
+        "open": round(base_price * random.uniform(0.99, 1.01), 2),
+        "high": round(current_price * random.uniform(1.01, 1.03), 2),
+        "low": round(current_price * random.uniform(0.97, 0.99), 2),
+        "volume": random.randint(5000000, 50000000),
+        "market_cap": random.randint(50, 3000) * 1e9,
+        "pe_ratio": round(random.uniform(10, 40), 2),
+        "dividend_yield": round(random.uniform(0, 0.03), 4),
+        "week_52_high": round(current_price * random.uniform(1.1, 1.3), 2),
+        "week_52_low": round(current_price * random.uniform(0.7, 0.9), 2),
+    }
+
+def generate_historical_data(symbol: str, days: int = 30) -> List[dict]:
+    base_prices = {
+        "AAPL": 178.50, "MSFT": 378.90, "GOOGL": 141.80, "AMZN": 178.25, "TSLA": 248.50,
+        "META": 505.75, "NVDA": 875.30, "JPM": 198.45, "V": 279.80, "JNJ": 156.20,
+        "SPY": 512.40, "QQQ": 438.60, "VTI": 268.30, "IWM": 198.75, "EFA": 78.90,
+        "BND": 72.45, "AGG": 98.60, "TLT": 92.30, "VFIAX": 485.20, "FXAIX": 178.50
+    }
+    
+    price = base_prices.get(symbol, 100 + random.uniform(0, 200))
+    history = []
+    
+    for i in range(days, 0, -1):
+        date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
+        daily_change = price * random.uniform(-0.02, 0.02)
+        open_price = price
+        close_price = price + daily_change
+        high_price = max(open_price, close_price) * random.uniform(1.001, 1.02)
+        low_price = min(open_price, close_price) * random.uniform(0.98, 0.999)
+        
+        history.append({
+            "date": date,
+            "open": round(open_price, 2),
+            "high": round(high_price, 2),
+            "low": round(low_price, 2),
+            "close": round(close_price, 2),
+            "volume": random.randint(5000000, 50000000)
+        })
+        price = close_price
+    
+    return history
 
 # API Routes
 @api_router.get("/")
