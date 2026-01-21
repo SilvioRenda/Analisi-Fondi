@@ -1346,6 +1346,9 @@ const CompareView = ({ symbols, onRemoveSymbol, onAddSymbol }) => {
                         <td className="text-right py-2 px-2 tabular-nums text-slate-600">
                           {formatNumber(item.volatility)}%
                         </td>
+                        <td className="text-right py-2 px-2 tabular-nums text-red-600 font-medium">
+                          {formatNumber(data.max_drawdowns?.[item.symbol])}%
+                        </td>
                       </tr>
                     ))}
                   </tbody>
