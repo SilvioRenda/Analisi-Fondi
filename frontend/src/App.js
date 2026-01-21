@@ -1305,15 +1305,6 @@ const CompareView = ({ symbols, onRemoveSymbol, onAddSymbol }) => {
                 </ResponsiveContainer>
               </div>
             )}
-                      stroke={lineColors[index % lineColors.length]}
-                      strokeWidth={2}
-                      dot={false}
-                      name={symbol}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
 
             {/* Performance Table */}
             <div className="bg-slate-50 rounded-xl p-4">
@@ -1327,6 +1318,7 @@ const CompareView = ({ symbols, onRemoveSymbol, onAddSymbol }) => {
                       <th className="text-right py-2 px-2 font-medium">Valore Finale</th>
                       <th className="text-right py-2 px-2 font-medium">Rendimento</th>
                       <th className="text-right py-2 px-2 font-medium">Volatilità Ann.</th>
+                      <th className="text-right py-2 px-2 font-medium">Max Drawdown</th>
                     </tr>
                   </thead>
                   <tbody>
