@@ -1143,20 +1143,40 @@ const CompareView = ({ symbols, onRemoveSymbol, onAddSymbol }) => {
           ))}
         </div>
 
-        {/* Period selector */}
-        <div className="flex gap-1 mt-4">
-          {periods.map((p) => (
+        {/* Chart Type & Period selector */}
+        <div className="flex flex-wrap items-center gap-4 mt-4">
+          <div className="flex gap-1">
             <Button
-              key={p.value}
-              variant={period === p.value ? "default" : "outline"}
+              variant={chartType === "performance" ? "default" : "outline"}
               size="sm"
-              onClick={() => setPeriod(p.value)}
-              className={period === p.value ? "bg-blue-600 hover:bg-blue-700" : ""}
-              data-testid={`compare-period-${p.value}`}
+              onClick={() => setChartType("performance")}
+              className={chartType === "performance" ? "bg-blue-600 hover:bg-blue-700" : ""}
             >
-              {p.label}
+              Performance Base 100
             </Button>
-          ))}
+            <Button
+              variant={chartType === "drawdown" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setChartType("drawdown")}
+              className={chartType === "drawdown" ? "bg-red-600 hover:bg-red-700" : ""}
+            >
+              Max Drawdown
+            </Button>
+          </div>
+          <div className="flex gap-1">
+            {periods.map((p) => (
+              <Button
+                key={p.value}
+                variant={period === p.value ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setPeriod(p.value)}
+                className={period === p.value ? "bg-slate-700" : ""}
+                data-testid={`compare-period-${p.value}`}
+              >
+                {p.label}
+              </Button>
+            ))}
+          </div>
         </div>
       </CardHeader>
       
@@ -1167,57 +1187,124 @@ const CompareView = ({ symbols, onRemoveSymbol, onAddSymbol }) => {
           </div>
         ) : data ? (
           <>
-            {/* Chart */}
-            <div className="h-80 mb-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.chart_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 11, fill: '#64748B' }}
-                    tickLine={false}
-                    axisLine={{ stroke: '#E2E8F0' }}
-                    tickFormatter={(value) => {
-                      const date = new Date(value);
-                      return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
-                    }}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 11, fill: '#64748B' }}
-                    tickLine={false}
-                    axisLine={false}
-                    domain={['auto', 'auto']}
-                    tickFormatter={(value) => value.toFixed(0)}
-                  />
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #E2E8F0', 
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                    formatter={(value, name) => [value.toFixed(2), name]}
-                    labelFormatter={(label) => new Date(label).toLocaleDateString('it-IT', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  />
-                  {/* Reference line at 100 */}
-                  <Line
-                    type="monotone"
-                    dataKey={() => 100}
-                    stroke="#CBD5E1"
-                    strokeDasharray="5 5"
-                    strokeWidth={1}
-                    dot={false}
-                    name="Base 100"
-                  />
-                  {symbols.map((symbol, index) => (
-                    <Line
-                      key={symbol}
-                      type="monotone"
-                      dataKey={symbol}
+            {/* Performance Chart */}
+            {chartType === "performance" && (
+              <div className="h-80 mb-6">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data.chart_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 11, fill: '#64748B' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#E2E8F0' }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                      }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 11, fill: '#64748B' }}
+                      tickLine={false}
+                      axisLine={false}
+                      domain={['auto', 'auto']}
+                      tickFormatter={(value) => value.toFixed(0)}
+                    />
+                    <RechartsTooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #E2E8F0', 
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                      formatter={(value, name) => [value?.toFixed(2), name]}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('it-IT', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    />
+                    <ReferenceLine y={100} stroke="#CBD5E1" strokeDasharray="5 5" />
+                    {symbols.map((symbol, index) => (
+                      <Line
+                        key={symbol}
+                        type="monotone"
+                        dataKey={symbol}
+                        stroke={lineColors[index % lineColors.length]}
+                        strokeWidth={2}
+                        dot={false}
+                        name={symbol}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* Drawdown Chart */}
+            {chartType === "drawdown" && data.drawdown_chart && (
+              <div className="h-80 mb-6">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={data.drawdown_chart} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      {symbols.map((symbol, index) => (
+                        <linearGradient key={`grad-${symbol}`} id={`colorDD-${symbol}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={lineColors[index % lineColors.length]} stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor={lineColors[index % lineColors.length]} stopOpacity={0.05}/>
+                        </linearGradient>
+                      ))}
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 11, fill: '#64748B' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#E2E8F0' }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                      }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 11, fill: '#64748B' }}
+                      tickLine={false}
+                      axisLine={false}
+                      domain={['auto', 0]}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <ReferenceLine y={0} stroke="#94A3B8" strokeDasharray="3 3" />
+                    <RechartsTooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #E2E8F0', 
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                      formatter={(value, name) => {
+                        const cleanName = name.replace('_dd', '');
+                        return [`${value?.toFixed(2)}%`, cleanName];
+                      }}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('it-IT', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    />
+                    {symbols.map((symbol, index) => (
+                      <Area
+                        key={symbol}
+                        type="monotone"
+                        dataKey={`${symbol}_dd`}
+                        stroke={lineColors[index % lineColors.length]}
+                        strokeWidth={2}
+                        fill={`url(#colorDD-${symbol})`}
+                        name={symbol}
+                      />
+                    ))}
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
                       stroke={lineColors[index % lineColors.length]}
                       strokeWidth={2}
                       dot={false}
