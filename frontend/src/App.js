@@ -473,10 +473,12 @@ const DetailView = ({ symbol, onClose, onAddToWatchlist, isInWatchlist, onRemove
 const InstrumentDetailView = ({ symbol, onClose, onAddToWatchlist, isInWatchlist, onRemoveFromWatchlist }) => {
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
+  const [technicalData, setTechnicalData] = useState(null);
   const [period, setPeriod] = useState("1mo");
+  const [technicalPeriod, setTechnicalPeriod] = useState("6mo");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState("card"); // card or list
+  const [activeChart, setActiveChart] = useState("price"); // price, technical, drawdown
 
   const typeColors = {
     stock: "bg-blue-100 text-blue-800",
@@ -489,18 +491,20 @@ const InstrumentDetailView = ({ symbol, onClose, onAddToWatchlist, isInWatchlist
     setLoading(true);
     setError(null);
     try {
-      const [instrumentRes, historyRes] = await Promise.all([
+      const [instrumentRes, historyRes, technicalRes] = await Promise.all([
         axios.get(`${API}/instrument/${symbol}`),
-        axios.get(`${API}/history/${symbol}?period=${period}`)
+        axios.get(`${API}/history/${symbol}?period=${period}`),
+        axios.get(`${API}/technical/${symbol}?period=${technicalPeriod}`)
       ]);
       setData(instrumentRes.data);
       setHistory(historyRes.data);
+      setTechnicalData(technicalRes.data);
     } catch (err) {
       setError(err.response?.data?.detail || "Errore nel caricamento dei dati");
     } finally {
       setLoading(false);
     }
-  }, [symbol, period]);
+  }, [symbol, period, technicalPeriod]);
 
   useEffect(() => {
     fetchData();
