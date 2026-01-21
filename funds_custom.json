@@ -1,0 +1,24 @@
+{
+  "_comment": "Configurazione custom fondi in formato JSON",
+  "_instructions": "Puoi specificare metadati custom per ogni fondo o lasciare che vengano recuperati automaticamente da Open FIGI",
+  
+  "Fondo Custom 1": {
+    "isin": "LU0097089360",
+    "ticker": null,
+    "name_short": "AB International Health Care",
+    "description": "Fondo azionario internazionale che investe in società operanti nel settore sanitario e healthcare a livello globale.",
+    "manager": "Alliance Bernstein",
+    "category": "Azionario Internazionale - Healthcare"
+  },
+  
+  "Fondo Custom 2": {
+    "isin": "LU1960219225",
+    "ticker": null,
+    "name_short": "BlackRock World Healthscience",
+    "description": "Fondo globale che investe in società del settore healthscience.",
+    "manager": "BlackRock",
+    "category": "Azionario Globale - Healthscience"
+  },
+  
+  "_note": "Per aggiungere un nuovo fondo, copia uno degli esempi sopra e modifica i valori. Se lasci ticker, description, manager o category vuoti/null, il sistema proverà a recuperarli automaticamente da Open FIGI."
+}

@@ -3,6 +3,9 @@
 # IDE and editors
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
 
 # Dependencies
 node_modules/
@@ -35,6 +38,7 @@ dist/
 *credentials.json*
 
 # Logs and debug files
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -43,13 +47,21 @@ dump.rdb
 
 # System files
 .DS_Store
+Thumbs.db
 *.pem
 
-# Python
+# Python cache and bytecode
 __pycache__/
+*.py[cod]
 *.pyc
+*$py.class
+*.so
+
+# Virtual environments
 venv/
 .venv/
+env/
+ENV/
 
 # Development tools
 chainlit.md
@@ -74,7 +86,14 @@ agenthub/agents/youtube/db
 
 # Build caches
 .cache/
+*.cache
+cache/
 frontend/node_modules/.cache/
 
 # Mobile development
 android-sdk/
+
+# Python output files
+output/
+*.html
+*.xlsx

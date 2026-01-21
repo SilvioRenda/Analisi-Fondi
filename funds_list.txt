@@ -1,0 +1,20 @@
+# Lista ISIN dei fondi da analizzare
+# Un ISIN per riga
+# Le righe che iniziano con # sono commenti e vengono ignorate
+
+# Fondi Healthcare esistenti
+LU0097089360
+LU1960219225
+LU0823417067
+IE0003111113
+LU2400458779
+LU2078916223
+LU0188500879
+IE00BKSBD728
+US87281Y1029
+LU2041626974
+
+# Aggiungi qui altri ISIN che vuoi analizzare
+# Esempio:
+# LU1234567890
+# IE9876543210
