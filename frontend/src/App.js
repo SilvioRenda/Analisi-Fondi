@@ -466,38 +466,309 @@ const DetailView = ({ symbol, onClose, onAddToWatchlist, isInWatchlist, onRemove
     );
   }
 
+  return null; // Old component - replaced by InstrumentDetailView
+};
+
+// New Comprehensive Instrument Detail View
+const InstrumentDetailView = ({ symbol, onClose, onAddToWatchlist, isInWatchlist, onRemoveFromWatchlist }) => {
+  const [data, setData] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [period, setPeriod] = useState("1mo");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState("card"); // card or list
+
+  const typeColors = {
+    stock: "bg-blue-100 text-blue-800",
+    etf: "bg-purple-100 text-purple-800",
+    fund: "bg-amber-100 text-amber-800",
+    bond: "bg-emerald-100 text-emerald-800"
+  };
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [instrumentRes, historyRes] = await Promise.all([
+        axios.get(`${API}/instrument/${symbol}`),
+        axios.get(`${API}/history/${symbol}?period=${period}`)
+      ]);
+      setData(instrumentRes.data);
+      setHistory(historyRes.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Errore nel caricamento dei dati");
+    } finally {
+      setLoading(false);
+    }
+  }, [symbol, period]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8" data-testid="detail-loading">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+          <div className="h-64 bg-slate-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-white border-slate-200" data-testid="detail-error">
+        <CardContent className="p-8 text-center">
+          <p className="text-red-500">{error}</p>
+          <Button onClick={fetchData} className="mt-4">Riprova</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden fade-in" data-testid="detail-view">
-      {/* Header */}
-      <div className="p-6 border-b border-slate-100">
-        <div className="flex justify-between items-start">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-2xl font-bold text-slate-900">{quote?.symbol}</h2>
-              <Badge className="bg-blue-100 text-blue-800">
-                {details?.instrument_type?.toUpperCase()}
-              </Badge>
-              {details?.exchange && (
-                <span className="text-sm text-slate-500">{details.exchange}</span>
+    <div className="space-y-4 fade-in" data-testid="instrument-detail-view">
+      {/* Header Card */}
+      <Card className="bg-white border-slate-200">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h2 className="text-2xl font-bold text-slate-900">{data?.symbol}</h2>
+                <Badge className={typeColors[data?.type] || typeColors.stock}>
+                  {data?.type?.toUpperCase()}
+                </Badge>
+                {data?.exchange && (
+                  <span className="text-sm text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{data.exchange}</span>
+                )}
+              </div>
+              <p className="text-slate-600 mb-1">{data?.name}</p>
+              {data?.isin && (
+                <p className="text-xs text-slate-400">ISIN: {data.isin}</p>
               )}
             </div>
-            <p className="text-slate-600">{quote?.name}</p>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => isInWatchlist ? onRemoveFromWatchlist(symbol) : onAddToWatchlist({ symbol: data?.symbol, name: data?.name, instrument_type: data?.type })}
+                      data-testid="detail-watchlist-btn"
+                    >
+                      {isInWatchlist ? <Star className="h-5 w-5 fill-amber-400 text-amber-400" /> : <StarOff className="h-5 w-5" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isInWatchlist ? "Rimuovi dalla watchlist" : "Aggiungi alla watchlist"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Button variant="outline" size="icon" onClick={fetchData} data-testid="refresh-btn">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onClose} data-testid="close-detail-btn">
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => isInWatchlist ? onRemoveFromWatchlist(symbol) : onAddToWatchlist({ symbol: quote?.symbol, name: quote?.name, instrument_type: details?.instrument_type })}
-                    data-testid="detail-watchlist-btn"
-                  >
-                    {isInWatchlist ? <Star className="h-5 w-5 fill-amber-400 text-amber-400" /> : <StarOff className="h-5 w-5" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isInWatchlist ? "Rimuovi dalla watchlist" : "Aggiungi alla watchlist"}
+          
+          {/* Price Section */}
+          <div className="flex items-end gap-6 mb-6">
+            <div>
+              <span className="text-4xl font-bold text-slate-900 tabular-nums">
+                {formatCurrency(data?.price, data?.currency)}
+              </span>
+            </div>
+            {data && <PriceChange change={data.change} changePercent={data.change_percent} size="large" />}
+          </div>
+
+          {/* Analyst Rating */}
+          {data?.analyst_rating && (
+            <div className="bg-slate-50 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="h-4 w-4 text-slate-500" />
+                <span className="text-sm font-medium text-slate-700">Rating Analisti</span>
+                <span className="text-xs text-slate-400">({data.analyst_rating.source})</span>
+              </div>
+              <AnalystRating rating={data.analyst_rating} />
+            </div>
+          )}
+
+          {/* Mini Metrics Row */}
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1">Apertura</p>
+              <p className="font-semibold tabular-nums">{formatCurrency(data?.open, data?.currency)}</p>
+            </div>
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1">Max Giorno</p>
+              <p className="font-semibold tabular-nums">{formatCurrency(data?.high, data?.currency)}</p>
+            </div>
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1">Min Giorno</p>
+              <p className="font-semibold tabular-nums">{formatCurrency(data?.low, data?.currency)}</p>
+            </div>
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1">Volume</p>
+              <p className="font-semibold tabular-nums">{formatLargeNumber(data?.volume)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Chart Card */}
+      <Card className="bg-white border-slate-200">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">Andamento Storico</CardTitle>
+            <div className="flex gap-1">
+              {["1mo", "3mo", "6mo", "1y", "5y"].map((p) => (
+                <Button
+                  key={p}
+                  variant={period === p ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setPeriod(p)}
+                  className={period === p ? "bg-blue-600" : ""}
+                  data-testid={`period-${p}`}
+                >
+                  {p.toUpperCase()}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={history} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 11, fill: '#64748B' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#E2E8F0' }}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+                  }}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: '#64748B' }}
+                  tickLine={false}
+                  axisLine={false}
+                  domain={['auto', 'auto']}
+                  tickFormatter={(value) => formatNumber(value, 0)}
+                />
+                <RechartsTooltip 
+                  contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                  formatter={(value) => [formatCurrency(value, data?.currency), 'Prezzo']}
+                  labelFormatter={(label) => new Date(label).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="close" 
+                  stroke="#3B82F6" 
+                  strokeWidth={2}
+                  fill="url(#colorPrice)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Valuation Metrics */}
+        <Card className="bg-white border-slate-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-slate-500" />
+              Metriche di Valutazione
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Market Cap</span>
+                <span className="font-semibold tabular-nums">{formatLargeNumber(data?.market_cap)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">P/E Ratio</span>
+                <span className="font-semibold tabular-nums">{formatNumber(data?.pe_ratio)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Forward P/E</span>
+                <span className="font-semibold tabular-nums">{formatNumber(data?.forward_pe)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">PEG Ratio</span>
+                <span className="font-semibold tabular-nums">{formatNumber(data?.peg_ratio)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Price to Book</span>
+                <span className="font-semibold tabular-nums">{formatNumber(data?.price_to_book)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-sm text-slate-600">EPS</span>
+                <span className="font-semibold tabular-nums">${formatNumber(data?.eps)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Trading Metrics */}
+        <Card className="bg-white border-slate-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-slate-500" />
+              Dati di Trading
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Max 52 Settimane</span>
+                <span className="font-semibold tabular-nums">{formatCurrency(data?.week_52_high, data?.currency)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Min 52 Settimane</span>
+                <span className="font-semibold tabular-nums">{formatCurrency(data?.week_52_low, data?.currency)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Beta</span>
+                <span className="font-semibold tabular-nums">{formatNumber(data?.beta)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Dividend Yield</span>
+                <span className="font-semibold tabular-nums">{data?.dividend_yield ? formatPercent(data.dividend_yield * 100) : 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Settore</span>
+                <span className="font-semibold text-sm">{data?.sector || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-sm text-slate-600">Valuta</span>
+                <span className="font-semibold">{data?.currency}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
