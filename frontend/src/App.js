@@ -1029,6 +1029,7 @@ const CompareView = ({ symbols, onRemoveSymbol, onAddSymbol }) => {
   const [loading, setLoading] = useState(false);
   const [newSymbol, setNewSymbol] = useState("");
   const [period, setPeriod] = useState("1mo");
+  const [chartType, setChartType] = useState("performance"); // performance or drawdown
 
   // Colors for different lines
   const lineColors = [
