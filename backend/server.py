@@ -172,27 +172,34 @@ async def root():
 @api_router.get("/search", response_model=List[SearchResult])
 async def search_instruments(q: str = Query(..., min_length=1)):
     """Search for financial instruments by symbol, name or ISIN"""
-    try:
-        results = []
-        
-        # Try direct symbol lookup
-        ticker = yf.Ticker(q.upper())
-        info = ticker.info
-        
-        if info and info.get('symbol'):
+    query = q.upper().strip()
+    results = []
+    
+    for symbol, info in SAMPLE_INSTRUMENTS.items():
+        # Match by symbol, name, or ISIN
+        if (query in symbol or 
+            query.lower() in info["name"].lower() or 
+            (info.get("isin") and query in info["isin"])):
             results.append(SearchResult(
-                symbol=info.get('symbol', q.upper()),
-                name=info.get('longName') or info.get('shortName', q.upper()),
-                instrument_type=get_instrument_type(info),
-                exchange=info.get('exchange'),
-                currency=info.get('currency')
+                symbol=symbol,
+                name=info["name"],
+                instrument_type=info["type"],
+                exchange=info.get("exchange"),
+                currency=info.get("currency", "USD")
             ))
-        
-        return results
-    except Exception as e:
-        logger.error(f"Search error: {e}")
-        # Return empty list on error
-        return []
+    
+    # If exact match not found, try to add it
+    if not results and len(query) >= 1:
+        # Add as unknown stock
+        results.append(SearchResult(
+            symbol=query,
+            name=f"{query} (Symbol)",
+            instrument_type="stock",
+            exchange="UNKNOWN",
+            currency="USD"
+        ))
+    
+    return results[:10]  # Limit results
 
 @api_router.get("/quote/{symbol}", response_model=QuoteData)
 async def get_quote(symbol: str):
