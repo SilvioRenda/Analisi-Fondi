@@ -164,6 +164,87 @@ def generate_historical_data(symbol: str, days: int = 30) -> List[dict]:
     
     return history
 
+# Technical Analysis Functions
+def calculate_sma(prices: List[float], period: int) -> List[Optional[float]]:
+    """Calculate Simple Moving Average"""
+    sma = []
+    for i in range(len(prices)):
+        if i < period - 1:
+            sma.append(None)
+        else:
+            avg = sum(prices[i-period+1:i+1]) / period
+            sma.append(round(avg, 2))
+    return sma
+
+def calculate_ema(prices: List[float], period: int) -> List[Optional[float]]:
+    """Calculate Exponential Moving Average"""
+    ema = []
+    multiplier = 2 / (period + 1)
+    
+    for i in range(len(prices)):
+        if i < period - 1:
+            ema.append(None)
+        elif i == period - 1:
+            # First EMA is SMA
+            sma = sum(prices[:period]) / period
+            ema.append(round(sma, 2))
+        else:
+            # EMA = (Close - EMA(prev)) * multiplier + EMA(prev)
+            prev_ema = ema[-1]
+            if prev_ema is not None:
+                new_ema = (prices[i] - prev_ema) * multiplier + prev_ema
+                ema.append(round(new_ema, 2))
+            else:
+                ema.append(None)
+    return ema
+
+def calculate_drawdown(prices: List[float]) -> List[dict]:
+    """Calculate drawdown from peak for each point"""
+    drawdown_data = []
+    running_max = prices[0]
+    
+    for i, price in enumerate(prices):
+        if price > running_max:
+            running_max = price
+        
+        drawdown_pct = ((price - running_max) / running_max) * 100 if running_max > 0 else 0
+        drawdown_data.append({
+            "price": round(price, 2),
+            "peak": round(running_max, 2),
+            "drawdown": round(drawdown_pct, 2)
+        })
+    
+    return drawdown_data
+
+def calculate_max_drawdown(prices: List[float]) -> dict:
+    """Calculate maximum drawdown statistics"""
+    if not prices:
+        return {"max_drawdown": 0, "max_drawdown_start": None, "max_drawdown_end": None}
+    
+    running_max = prices[0]
+    max_drawdown = 0
+    max_dd_start = 0
+    max_dd_end = 0
+    peak_idx = 0
+    
+    for i, price in enumerate(prices):
+        if price > running_max:
+            running_max = price
+            peak_idx = i
+        
+        drawdown = ((price - running_max) / running_max) * 100 if running_max > 0 else 0
+        
+        if drawdown < max_drawdown:
+            max_drawdown = drawdown
+            max_dd_start = peak_idx
+            max_dd_end = i
+    
+    return {
+        "max_drawdown": round(max_drawdown, 2),
+        "max_drawdown_start_idx": max_dd_start,
+        "max_drawdown_end_idx": max_dd_end
+    }
+
 # Trending/Popular instruments (basato su volume e interesse)
 TRENDING_SYMBOLS = ["NVDA", "AAPL", "MSFT", "TSLA", "META", "GOOGL", "AMZN", "SPY", "QQQ", "JPM"]
 
