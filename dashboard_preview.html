@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anteprima Dashboard - Analisi Fondi Healthcare</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            color: #1a202c;
+            line-height: 1.7;
+        }
+
+        .preview-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            color: white;
+            padding: 60px 50px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .instrument-manager-section {
+            padding: 50px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .instrument-manager-section h2 {
+            color: #1a202c;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        .add-instrument-form {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .add-instrument-form h3 {
+            color: #1a202c;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2d3748;
+            font-weight: 500;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+
+        .form-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3182ce;
+        }
+
+        .btn-primary, .btn-secondary, .btn-remove {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(44, 82, 130, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn-remove {
+            background: #ef4444;
+            color: white;
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+
+        .btn-remove:hover {
+            background: #dc2626;
+        }
+
+        .current-instruments {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .current-instruments h3 {
+            color: #1a202c;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .instruments-list {
+            margin-bottom: 20px;
+        }
+
+        .instrument-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .instrument-item:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .instrument-name {
+            flex: 1;
+            font-weight: 600;
+            color: #1a202c;
+        }
+
+        .instrument-id {
+            color: #718096;
+            font-size: 0.9em;
+        }
+
+        .empty-instruments {
+            padding: 30px;
+            text-align: center;
+            color: #718096;
+        }
+
+        .instrument-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .empty-state {
+            padding: 60px 30px;
+            text-align: center;
+            color: #718096;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 2px dashed #cbd5e0;
+            margin: 30px 50px;
+        }
+
+        .empty-state p {
+            font-size: 1.1em;
+            margin: 0;
+        }
+
+        .date-controls {
+            padding: 30px 50px;
+            background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .date-controls label {
+            font-weight: 600;
+            color: #1a202c;
+        }
+
+        .date-controls input[type="date"] {
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .info-box {
+            background: #e6f3ff;
+            border-left: 4px solid #3182ce;
+            padding: 20px;
+            margin: 30px 50px;
+            border-radius: 8px;
+        }
+
+        .info-box h3 {
+            color: #1a365d;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #2d3748;
+        }
+
+        .info-box li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <header>
+            <h1>Analisi Comparativa Fondi Healthcare</h1>
+            <p>Dashboard Interattiva - Anteprima</p>
+        </header>
+
+        <div class="instrument-manager-section">
+            <h2>Gestione Strumenti da Analizzare</h2>
+            
+            <div class="add-instrument-form">
+                <h3>Aggiungi Strumento</h3>
+                <div class="form-group">
+                    <label for="isin-input">ISIN o Ticker:</label>
+                    <input type="text" id="isin-input" placeholder="Es: LU0097089360 o AAPL" class="form-input" value="AAPL">
+                    <button id="add-instrument-btn" class="btn-primary">Aggiungi</button>
+                </div>
+                <div id="add-instrument-status" class="status-message" style="display: none;"></div>
+            </div>
+            
+            <div class="current-instruments">
+                <h3>Strumenti Attuali</h3>
+                <div id="instruments-list" class="instruments-list">
+                    <div class="instrument-item">
+                        <span class="instrument-name">Apple Inc.</span>
+                        <span class="instrument-id">(AAPL)</span>
+                        <button class="btn-remove">Rimuovi</button>
+                    </div>
+                    <div class="instrument-item">
+                        <span class="instrument-name">Microsoft Corporation</span>
+                        <span class="instrument-id">(MSFT)</span>
+                        <button class="btn-remove">Rimuovi</button>
+                    </div>
+                    <div class="instrument-item">
+                        <span class="instrument-name">Alliance Bernstein International Health Care Portfolio</span>
+                        <span class="instrument-id">(LU0097089360)</span>
+                        <button class="btn-remove">Rimuovi</button>
+                    </div>
+                </div>
+                <div class="instrument-actions">
+                    <button class="btn-secondary">Rimuovi Tutti</button>
+                    <button class="btn-primary">Rigenera Report</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="date-controls">
+            <label for="start-date">Data di partenza analisi:</label>
+            <input type="date" id="start-date" name="start-date" value="2024-01-01">
+            <button class="btn-primary">Applica</button>
+            <span>Periodo: 01/01/2024 - 20/01/2026</span>
+        </div>
+
+        <div class="empty-state">
+            <p>📊 Grafico Performance comparativa apparirà qui dopo l'aggiunta di strumenti</p>
+        </div>
+
+        <div class="info-box">
+            <h3>ℹ️ Come Funziona la Dashboard Interattiva</h3>
+            <ul>
+                <li><strong>Aggiungi Strumenti:</strong> Inserisci un ISIN (es: LU0097089360) o un ticker (es: AAPL) nel campo sopra e clicca "Aggiungi"</li>
+                <li><strong>Rimuovi Strumenti:</strong> Clicca "Rimuovi" accanto a qualsiasi strumento per eliminarlo dall'analisi</li>
+                <li><strong>Rigenera Report:</strong> Dopo aver aggiunto/rimosso strumenti, clicca "Rigenera Report" per aggiornare l'analisi</li>
+                <li><strong>Seleziona Periodo:</strong> Usa il selettore data per cambiare il periodo di analisi</li>
+                <li><strong>Report Completo:</strong> Il report include grafici, metriche, analisi settoriale, indicatori tecnici e molto altro</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="background: #fff3cd; border-left-color: #ffc107;">
+            <h3>🎯 Funzionalità Avanzate</h3>
+            <ul>
+                <li><strong>Analisi Fondamentale:</strong> Ratios finanziari, growth metrics, valuation</li>
+                <li><strong>Screening Strumenti:</strong> Ricerca per settore, paese, market cap</li>
+                <li><strong>Analisi Correlazione:</strong> Matrice correlazione e diversification ratio</li>
+                <li><strong>Ottimizzazione Portfolio:</strong> Efficient frontier, risk parity</li>
+                <li><strong>Indicatori Tecnici:</strong> RSI, MACD, Bollinger Bands, pattern recognition</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

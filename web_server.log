@@ -1,0 +1,25 @@
+2026-01-21 15:49:47,378 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-01-21 15:49:47,379 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-21 15:50:43,258 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-01-21 15:50:43,259 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-21 15:51:21,375 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-01-21 15:51:21,376 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-21 15:51:22,671 - web_server - DEBUG - index() chiamato
+2026-01-21 15:51:22,671 - web_server - DEBUG - index(): instruments_list length: 0
+2026-01-21 15:51:22,672 - web_server - INFO - index(): Nessuno strumento, ritorna report vuoto
+2026-01-21 15:51:22,674 - werkzeug - INFO - 127.0.0.1 - - [21/Jan/2026 15:51:22] "GET / HTTP/1.1" 200 -
+2026-01-21 15:51:22,900 - werkzeug - INFO - 127.0.0.1 - - [21/Jan/2026 15:51:22] "GET /api/instruments HTTP/1.1" 200 -
+2026-01-21 15:51:27,032 - web_server - DEBUG - index() chiamato
+2026-01-21 15:51:27,032 - web_server - DEBUG - index(): instruments_list length: 0
+2026-01-21 15:51:27,032 - web_server - INFO - index(): Nessuno strumento, ritorna report vuoto
+2026-01-21 15:51:27,034 - werkzeug - INFO - 127.0.0.1 - - [21/Jan/2026 15:51:27] "GET / HTTP/1.1" 200 -
+2026-01-21 15:51:33,423 - werkzeug - INFO - 127.0.0.1 - - [21/Jan/2026 15:51:33] "[35m[1mPOST /api/add_instrument HTTP/1.1[0m" 500 -
+2026-01-21 15:51:37,378 - web_server - DEBUG - index() chiamato
+2026-01-21 15:51:37,379 - web_server - DEBUG - index(): instruments_list length: 0
+2026-01-21 15:51:37,379 - web_server - INFO - index(): Nessuno strumento, ritorna report vuoto
+2026-01-21 15:51:37,381 - werkzeug - INFO - 127.0.0.1 - - [21/Jan/2026 15:51:37] "GET / HTTP/1.1" 200 -
+2026-01-21 15:51:37,453 - werkzeug - INFO - 127.0.0.1 - - [21/Jan/2026 15:51:37] "GET /api/instruments HTTP/1.1" 200 -
+2026-01-21 15:51:59,685 - werkzeug - INFO - 127.0.0.1 - - [21/Jan/2026 15:51:59] "[35m[1mPOST /api/add_instrument HTTP/1.1[0m" 500 -
