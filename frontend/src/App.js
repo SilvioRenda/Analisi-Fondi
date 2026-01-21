@@ -1080,11 +1080,16 @@ function App() {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search Section */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Analisi Strumenti Finanziari</h1>
           <p className="text-slate-500 mb-6">Cerca e analizza azioni, ETF, obbligazioni e fondi</p>
-          <SearchBar onSearch={handleSearch} isLoading={isSearching} />
+          <SearchBar onSearch={handleSearch} isLoading={isSearching} onSelectSymbol={handleSelectSymbol} />
         </div>
+
+        {/* Trending Section - Show only when no symbol selected */}
+        {!selectedSymbol && activeTab === "search" && (
+          <TrendingSection onSelect={handleSelectSymbol} />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -1097,32 +1102,20 @@ function App() {
 
               <TabsContent value="search" className="space-y-4">
                 {selectedSymbol ? (
-                  <DetailView
+                  <InstrumentDetailView
                     symbol={selectedSymbol}
                     onClose={() => setSelectedSymbol(null)}
                     onAddToWatchlist={handleAddToWatchlist}
                     isInWatchlist={isInWatchlist(selectedSymbol)}
                     onRemoveFromWatchlist={handleRemoveFromWatchlist}
                   />
-                ) : searchResults.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {searchResults.map((result) => (
-                      <InstrumentCard
-                        key={result.symbol}
-                        data={result}
-                        onSelect={setSelectedSymbol}
-                        onAddToWatchlist={handleAddToWatchlist}
-                        isInWatchlist={isInWatchlist(result.symbol)}
-                        onRemoveFromWatchlist={handleRemoveFromWatchlist}
-                      />
-                    ))}
-                  </div>
                 ) : (
                   <Card className="bg-white border-slate-200" data-testid="search-placeholder">
                     <CardContent className="p-12 text-center">
                       <Search className="h-16 w-16 text-slate-300 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-slate-700 mb-2">Cerca uno strumento finanziario</h3>
-                      <p className="text-slate-500">Inserisci un simbolo (AAPL), nome (Apple) o codice ISIN</p>
+                      <p className="text-slate-500 mb-4">Inserisci un simbolo (AAPL), nome (Apple) o codice ISIN</p>
+                      <p className="text-sm text-slate-400">Oppure seleziona uno strumento dalla sezione "Popolari" sopra</p>
                     </CardContent>
                   </Card>
                 )}
