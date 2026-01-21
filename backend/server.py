@@ -748,11 +748,47 @@ async def compare_instruments(
                 "volatility": round(volatility, 2)
             })
     
+    # Calculate drawdown data for each symbol (rebased to 100)
+    drawdown_chart = []
+    for i, day_data in enumerate(reference_history):
+        point = {"date": day_data["date"]}
+        
+        for symbol in symbol_list:
+            if i < len(all_histories[symbol]):
+                # Get rebased prices up to this point
+                closes_rebased = []
+                for j in range(i + 1):
+                    if j < len(all_histories[symbol]):
+                        close_price = all_histories[symbol][j]["close"]
+                        base_price = base_prices[symbol]
+                        rebased = (close_price / base_price) * 100
+                        closes_rebased.append(rebased)
+                
+                # Calculate drawdown at this point
+                if closes_rebased:
+                    peak = max(closes_rebased)
+                    current = closes_rebased[-1]
+                    drawdown = ((current - peak) / peak) * 100 if peak > 0 else 0
+                    point[f"{symbol}_dd"] = round(drawdown, 2)
+                    point[f"{symbol}_value"] = round(current, 2)
+        
+        drawdown_chart.append(point)
+    
+    # Calculate max drawdown for each symbol
+    max_drawdowns = {}
+    for symbol in symbol_list:
+        closes = [h["close"] for h in all_histories[symbol]]
+        rebased_closes = [(c / base_prices[symbol]) * 100 for c in closes]
+        max_dd = calculate_max_drawdown(rebased_closes)
+        max_drawdowns[symbol] = max_dd["max_drawdown"]
+    
     return {
         "chart_data": chart_data,
+        "drawdown_chart": drawdown_chart,
         "symbols": symbol_list,
         "period": period,
-        "performance": performance
+        "performance": performance,
+        "max_drawdowns": max_drawdowns
     }
 
 # Include the router in the main app
