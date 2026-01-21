@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import "@/App.css";
 import axios from "axios";
-import { Search, TrendingUp, TrendingDown, Star, StarOff, BarChart3, RefreshCw, X, Plus, ArrowUpDown } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Star, StarOff, BarChart3, RefreshCw, X, Plus, ArrowUpDown, LayoutGrid, List, Flame, Target, Building2, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
