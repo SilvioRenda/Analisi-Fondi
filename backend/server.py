@@ -164,10 +164,144 @@ def generate_historical_data(symbol: str, days: int = 30) -> List[dict]:
     
     return history
 
+# Trending/Popular instruments (basato su volume e interesse)
+TRENDING_SYMBOLS = ["NVDA", "AAPL", "MSFT", "TSLA", "META", "GOOGL", "AMZN", "SPY", "QQQ", "JPM"]
+
+# Analyst ratings (mock - in produzione verranno da PDF Goldman Sachs)
+ANALYST_RATINGS = {
+    "AAPL": {"rating": "Buy", "target_price": 210.00, "source": "Goldman Sachs", "date": "2025-01-15", "upside": 17.5},
+    "MSFT": {"rating": "Strong Buy", "target_price": 450.00, "source": "Goldman Sachs", "date": "2025-01-10", "upside": 18.8},
+    "GOOGL": {"rating": "Buy", "target_price": 165.00, "source": "Goldman Sachs", "date": "2025-01-12", "upside": 16.4},
+    "AMZN": {"rating": "Buy", "target_price": 220.00, "source": "Goldman Sachs", "date": "2025-01-08", "upside": 23.5},
+    "TSLA": {"rating": "Neutral", "target_price": 250.00, "source": "Goldman Sachs", "date": "2025-01-14", "upside": 0.6},
+    "META": {"rating": "Strong Buy", "target_price": 600.00, "source": "Goldman Sachs", "date": "2025-01-11", "upside": 18.6},
+    "NVDA": {"rating": "Strong Buy", "target_price": 1100.00, "source": "Goldman Sachs", "date": "2025-01-13", "upside": 25.7},
+    "JPM": {"rating": "Buy", "target_price": 230.00, "source": "Goldman Sachs", "date": "2025-01-09", "upside": 15.9},
+    "V": {"rating": "Buy", "target_price": 320.00, "source": "Goldman Sachs", "date": "2025-01-07", "upside": 14.4},
+    "SPY": {"rating": "Hold", "target_price": 530.00, "source": "Internal", "date": "2025-01-15", "upside": 3.4},
+}
+
+def generate_sparkline_data(symbol: str, days: int = 7) -> List[float]:
+    """Generate mini sparkline data for last N days"""
+    base_prices = {
+        "AAPL": 178.50, "MSFT": 378.90, "GOOGL": 141.80, "AMZN": 178.25, "TSLA": 248.50,
+        "META": 505.75, "NVDA": 875.30, "JPM": 198.45, "V": 279.80, "JNJ": 156.20,
+        "SPY": 512.40, "QQQ": 438.60, "VTI": 268.30, "IWM": 198.75, "EFA": 78.90,
+        "BND": 72.45, "AGG": 98.60, "TLT": 92.30, "VFIAX": 485.20, "FXAIX": 178.50
+    }
+    price = base_prices.get(symbol, 100)
+    sparkline = []
+    for _ in range(days):
+        price = price * (1 + random.uniform(-0.02, 0.02))
+        sparkline.append(round(price, 2))
+    return sparkline
+
 # API Routes
 @api_router.get("/")
 async def root():
     return {"message": "Financial Analysis API"}
+
+@api_router.get("/autocomplete")
+async def autocomplete(q: str = Query(..., min_length=1)):
+    """Autocomplete suggestions while typing"""
+    query = q.upper().strip()
+    suggestions = []
+    
+    for symbol, info in SAMPLE_INSTRUMENTS.items():
+        score = 0
+        # Exact symbol match gets highest score
+        if symbol == query:
+            score = 100
+        elif symbol.startswith(query):
+            score = 80
+        elif query in symbol:
+            score = 60
+        elif query.lower() in info["name"].lower():
+            score = 40
+        elif info.get("isin") and query in info["isin"]:
+            score = 30
+        
+        if score > 0:
+            suggestions.append({
+                "symbol": symbol,
+                "name": info["name"],
+                "type": info["type"],
+                "score": score
+            })
+    
+    # Sort by score descending
+    suggestions.sort(key=lambda x: x["score"], reverse=True)
+    return suggestions[:8]
+
+@api_router.get("/trending")
+async def get_trending():
+    """Get trending/popular instruments"""
+    results = []
+    for symbol in TRENDING_SYMBOLS:
+        if symbol in SAMPLE_INSTRUMENTS:
+            info = SAMPLE_INSTRUMENTS[symbol]
+            price_data = generate_price_data(symbol)
+            sparkline = generate_sparkline_data(symbol)
+            
+            results.append({
+                "symbol": symbol,
+                "name": info["name"],
+                "type": info["type"],
+                "price": price_data["price"],
+                "change": price_data["change"],
+                "change_percent": price_data["change_percent"],
+                "sparkline": sparkline,
+                "volume": price_data["volume"],
+                "market_cap": price_data["market_cap"]
+            })
+    return results
+
+@api_router.get("/instrument/{symbol}")
+async def get_instrument_full(symbol: str):
+    """Get complete instrument data including all metrics, sparkline, and analyst rating"""
+    symbol = symbol.upper()
+    
+    if symbol not in SAMPLE_INSTRUMENTS:
+        info = {"name": f"{symbol} Stock", "type": "stock", "currency": "USD", "sector": "Unknown"}
+    else:
+        info = SAMPLE_INSTRUMENTS[symbol]
+    
+    price_data = generate_price_data(symbol)
+    sparkline = generate_sparkline_data(symbol, 30)  # 30 days for mini chart
+    analyst = ANALYST_RATINGS.get(symbol)
+    
+    return {
+        "symbol": symbol,
+        "name": info["name"],
+        "type": info.get("type", "stock"),
+        "sector": info.get("sector"),
+        "exchange": info.get("exchange"),
+        "currency": info.get("currency", "USD"),
+        "isin": info.get("isin"),
+        # Price data
+        "price": price_data["price"],
+        "change": price_data["change"],
+        "change_percent": price_data["change_percent"],
+        "open": price_data["open"],
+        "high": price_data["high"],
+        "low": price_data["low"],
+        "volume": price_data["volume"],
+        "market_cap": price_data["market_cap"],
+        "pe_ratio": price_data["pe_ratio"],
+        "dividend_yield": price_data["dividend_yield"],
+        "week_52_high": price_data["week_52_high"],
+        "week_52_low": price_data["week_52_low"],
+        # Sparkline
+        "sparkline": sparkline,
+        # Analyst rating
+        "analyst_rating": analyst,
+        # Additional metrics
+        "beta": round(random.uniform(0.5, 2), 2),
+        "eps": round(random.uniform(2, 20), 2),
+        "forward_pe": round(price_data["pe_ratio"] * random.uniform(0.8, 1.1), 2),
+        "peg_ratio": round(random.uniform(0.5, 3), 2),
+        "price_to_book": round(random.uniform(1, 15), 2),
+    }
 
 @api_router.get("/search", response_model=List[SearchResult])
 async def search_instruments(q: str = Query(..., min_length=1)):
