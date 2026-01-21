@@ -235,30 +235,21 @@ async def get_quote(symbol: str):
 @api_router.get("/history/{symbol}", response_model=List[HistoricalData])
 async def get_history(symbol: str, period: str = "1mo"):
     """Get historical data for a symbol"""
-    try:
-        ticker = yf.Ticker(symbol.upper())
-        hist = ticker.history(period=period)
-        
-        if hist.empty:
-            raise HTTPException(status_code=404, detail="No historical data found")
-        
-        result = []
-        for date, row in hist.iterrows():
-            result.append(HistoricalData(
-                date=date.strftime('%Y-%m-%d'),
-                open=round(row['Open'], 2),
-                high=round(row['High'], 2),
-                low=round(row['Low'], 2),
-                close=round(row['Close'], 2),
-                volume=int(row['Volume'])
-            ))
-        
-        return result
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"History error for {symbol}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    symbol = symbol.upper()
+    
+    # Convert period to days
+    period_days = {
+        "1mo": 30,
+        "3mo": 90,
+        "6mo": 180,
+        "1y": 365,
+        "5y": 1825
+    }
+    
+    days = period_days.get(period, 30)
+    history = generate_historical_data(symbol, days)
+    
+    return [HistoricalData(**h) for h in history]
 
 @api_router.get("/details/{symbol}")
 async def get_details(symbol: str):
