@@ -164,6 +164,87 @@ def generate_historical_data(symbol: str, days: int = 30) -> List[dict]:
     
     return history
 
+# Technical Analysis Functions
+def calculate_sma(prices: List[float], period: int) -> List[Optional[float]]:
+    """Calculate Simple Moving Average"""
+    sma = []
+    for i in range(len(prices)):
+        if i < period - 1:
+            sma.append(None)
+        else:
+            avg = sum(prices[i-period+1:i+1]) / period
+            sma.append(round(avg, 2))
+    return sma
+
+def calculate_ema(prices: List[float], period: int) -> List[Optional[float]]:
+    """Calculate Exponential Moving Average"""
+    ema = []
+    multiplier = 2 / (period + 1)
+    
+    for i in range(len(prices)):
+        if i < period - 1:
+            ema.append(None)
+        elif i == period - 1:
+            # First EMA is SMA
+            sma = sum(prices[:period]) / period
+            ema.append(round(sma, 2))
+        else:
+            # EMA = (Close - EMA(prev)) * multiplier + EMA(prev)
+            prev_ema = ema[-1]
+            if prev_ema is not None:
+                new_ema = (prices[i] - prev_ema) * multiplier + prev_ema
+                ema.append(round(new_ema, 2))
+            else:
+                ema.append(None)
+    return ema
+
+def calculate_drawdown(prices: List[float]) -> List[dict]:
+    """Calculate drawdown from peak for each point"""
+    drawdown_data = []
+    running_max = prices[0]
+    
+    for i, price in enumerate(prices):
+        if price > running_max:
+            running_max = price
+        
+        drawdown_pct = ((price - running_max) / running_max) * 100 if running_max > 0 else 0
+        drawdown_data.append({
+            "price": round(price, 2),
+            "peak": round(running_max, 2),
+            "drawdown": round(drawdown_pct, 2)
+        })
+    
+    return drawdown_data
+
+def calculate_max_drawdown(prices: List[float]) -> dict:
+    """Calculate maximum drawdown statistics"""
+    if not prices:
+        return {"max_drawdown": 0, "max_drawdown_start": None, "max_drawdown_end": None}
+    
+    running_max = prices[0]
+    max_drawdown = 0
+    max_dd_start = 0
+    max_dd_end = 0
+    peak_idx = 0
+    
+    for i, price in enumerate(prices):
+        if price > running_max:
+            running_max = price
+            peak_idx = i
+        
+        drawdown = ((price - running_max) / running_max) * 100 if running_max > 0 else 0
+        
+        if drawdown < max_drawdown:
+            max_drawdown = drawdown
+            max_dd_start = peak_idx
+            max_dd_end = i
+    
+    return {
+        "max_drawdown": round(max_drawdown, 2),
+        "max_drawdown_start_idx": max_dd_start,
+        "max_drawdown_end_idx": max_dd_end
+    }
+
 # Trending/Popular instruments (basato su volume e interesse)
 TRENDING_SYMBOLS = ["NVDA", "AAPL", "MSFT", "TSLA", "META", "GOOGL", "AMZN", "SPY", "QQQ", "JPM"]
 
@@ -385,6 +466,96 @@ async def get_history(symbol: str, period: str = "1mo"):
     
     return [HistoricalData(**h) for h in history]
 
+@api_router.get("/technical/{symbol}")
+async def get_technical_analysis(symbol: str, period: str = "6mo"):
+    """Get technical analysis data with moving averages and drawdown"""
+    symbol = symbol.upper()
+    
+    # Convert period to days (need more data for moving averages)
+    period_days = {
+        "1mo": 60,    # Need extra days for MAs
+        "3mo": 120,
+        "6mo": 250,
+        "1y": 450,
+        "2y": 800,
+        "5y": 2000
+    }
+    
+    days = period_days.get(period, 250)
+    history = generate_historical_data(symbol, days)
+    
+    # Extract close prices
+    dates = [h["date"] for h in history]
+    closes = [h["close"] for h in history]
+    
+    # Calculate Moving Averages
+    sma_20 = calculate_sma(closes, 20)
+    sma_50 = calculate_sma(closes, 50)
+    sma_200 = calculate_sma(closes, 200)
+    ema_20 = calculate_ema(closes, 20)
+    ema_50 = calculate_ema(closes, 50)
+    
+    # Calculate Drawdown
+    drawdown_data = calculate_drawdown(closes)
+    max_dd_stats = calculate_max_drawdown(closes)
+    
+    # Determine Golden/Death Cross signals
+    signals = []
+    for i in range(1, len(closes)):
+        if sma_50[i] is not None and sma_200[i] is not None and sma_50[i-1] is not None and sma_200[i-1] is not None:
+            # Golden Cross: SMA50 crosses above SMA200
+            if sma_50[i-1] <= sma_200[i-1] and sma_50[i] > sma_200[i]:
+                signals.append({"date": dates[i], "type": "golden_cross", "description": "Golden Cross - Bullish"})
+            # Death Cross: SMA50 crosses below SMA200
+            elif sma_50[i-1] >= sma_200[i-1] and sma_50[i] < sma_200[i]:
+                signals.append({"date": dates[i], "type": "death_cross", "description": "Death Cross - Bearish"})
+    
+    # Current trend indicator
+    current_trend = "neutral"
+    if sma_50[-1] is not None and sma_200[-1] is not None:
+        if sma_50[-1] > sma_200[-1]:
+            current_trend = "bullish"
+        else:
+            current_trend = "bearish"
+    
+    # Build chart data (limit to requested period display)
+    display_days = {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825}.get(period, 180)
+    start_idx = max(0, len(closes) - display_days)
+    
+    chart_data = []
+    for i in range(start_idx, len(closes)):
+        chart_data.append({
+            "date": dates[i],
+            "close": closes[i],
+            "sma_20": sma_20[i],
+            "sma_50": sma_50[i],
+            "sma_200": sma_200[i],
+            "ema_20": ema_20[i],
+            "ema_50": ema_50[i],
+            "drawdown": drawdown_data[i]["drawdown"],
+            "peak": drawdown_data[i]["peak"]
+        })
+    
+    return {
+        "symbol": symbol,
+        "period": period,
+        "chart_data": chart_data,
+        "signals": signals[-5:] if signals else [],  # Last 5 signals
+        "current_trend": current_trend,
+        "max_drawdown": max_dd_stats,
+        "current_drawdown": drawdown_data[-1]["drawdown"] if drawdown_data else 0,
+        "summary": {
+            "current_price": closes[-1],
+            "sma_20": sma_20[-1],
+            "sma_50": sma_50[-1],
+            "sma_200": sma_200[-1],
+            "ema_20": ema_20[-1],
+            "ema_50": ema_50[-1],
+            "price_vs_sma50": round(((closes[-1] / sma_50[-1]) - 1) * 100, 2) if sma_50[-1] else None,
+            "price_vs_sma200": round(((closes[-1] / sma_200[-1]) - 1) * 100, 2) if sma_200[-1] else None,
+        }
+    }
+
 @api_router.get("/details/{symbol}")
 async def get_details(symbol: str):
     """Get detailed information for a symbol"""
@@ -577,11 +748,47 @@ async def compare_instruments(
                 "volatility": round(volatility, 2)
             })
     
+    # Calculate drawdown data for each symbol (rebased to 100)
+    drawdown_chart = []
+    for i, day_data in enumerate(reference_history):
+        point = {"date": day_data["date"]}
+        
+        for symbol in symbol_list:
+            if i < len(all_histories[symbol]):
+                # Get rebased prices up to this point
+                closes_rebased = []
+                for j in range(i + 1):
+                    if j < len(all_histories[symbol]):
+                        close_price = all_histories[symbol][j]["close"]
+                        base_price = base_prices[symbol]
+                        rebased = (close_price / base_price) * 100
+                        closes_rebased.append(rebased)
+                
+                # Calculate drawdown at this point
+                if closes_rebased:
+                    peak = max(closes_rebased)
+                    current = closes_rebased[-1]
+                    drawdown = ((current - peak) / peak) * 100 if peak > 0 else 0
+                    point[f"{symbol}_dd"] = round(drawdown, 2)
+                    point[f"{symbol}_value"] = round(current, 2)
+        
+        drawdown_chart.append(point)
+    
+    # Calculate max drawdown for each symbol
+    max_drawdowns = {}
+    for symbol in symbol_list:
+        closes = [h["close"] for h in all_histories[symbol]]
+        rebased_closes = [(c / base_prices[symbol]) * 100 for c in closes]
+        max_dd = calculate_max_drawdown(rebased_closes)
+        max_drawdowns[symbol] = max_dd["max_drawdown"]
+    
     return {
         "chart_data": chart_data,
+        "drawdown_chart": drawdown_chart,
         "symbols": symbol_list,
         "period": period,
-        "performance": performance
+        "performance": performance,
+        "max_drawdowns": max_drawdowns
     }
 
 # Include the router in the main app
