@@ -358,32 +358,26 @@ async def compare_instruments(symbols: str = Query(..., description="Comma-separ
     
     results = []
     for symbol in symbol_list:
-        try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
-            
-            if info and info.get('symbol'):
-                current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose', 0)
-                previous_close = info.get('previousClose') or info.get('regularMarketPreviousClose', current_price)
-                change = current_price - previous_close if previous_close else 0
-                change_percent = (change / previous_close * 100) if previous_close else 0
-                
-                results.append({
-                    "symbol": info.get('symbol'),
-                    "name": info.get('longName') or info.get('shortName'),
-                    "price": round(current_price, 2),
-                    "change_percent": round(change_percent, 2),
-                    "market_cap": info.get('marketCap'),
-                    "pe_ratio": info.get('trailingPE'),
-                    "dividend_yield": info.get('dividendYield'),
-                    "beta": info.get('beta'),
-                    "week_52_high": info.get('fiftyTwoWeekHigh'),
-                    "week_52_low": info.get('fiftyTwoWeekLow'),
-                    "currency": info.get('currency', 'USD')
-                })
-        except Exception as e:
-            logger.error(f"Compare error for {symbol}: {e}")
-            continue
+        if symbol in SAMPLE_INSTRUMENTS:
+            info = SAMPLE_INSTRUMENTS[symbol]
+        else:
+            info = {"name": f"{symbol} Stock", "type": "stock", "currency": "USD"}
+        
+        price_data = generate_price_data(symbol)
+        
+        results.append({
+            "symbol": symbol,
+            "name": info["name"],
+            "price": price_data["price"],
+            "change_percent": price_data["change_percent"],
+            "market_cap": price_data["market_cap"],
+            "pe_ratio": price_data["pe_ratio"],
+            "dividend_yield": price_data["dividend_yield"],
+            "beta": round(random.uniform(0.5, 2), 2),
+            "week_52_high": price_data["week_52_high"],
+            "week_52_low": price_data["week_52_low"],
+            "currency": info.get("currency", "USD")
+        })
     
     return results
 
