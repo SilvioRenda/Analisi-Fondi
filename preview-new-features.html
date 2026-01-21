@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinAnalytics - Preview Nuove Feature</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .card-hover {
+            transition: all 0.2s;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .gradient-bar {
+            background: linear-gradient(to right, #10b981, #fbbf24, #ef4444);
+        }
+
+        .rsi-indicator {
+            position: relative;
+        }
+
+        .rsi-marker {
+            position: absolute;
+            top: -4px;
+            width: 4px;
+            height: 40px;
+            background: #1e293b;
+            border-radius: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .treemap-cell {
+            transition: opacity 0.2s;
+            cursor: pointer;
+        }
+
+        .treemap-cell:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span class="ml-2 text-xl font-semibold text-slate-900">FinAnalytics</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-slate-500">Preview Nuove Feature</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">Preview: Apple Inc. (AAPL)</h1>
+            <p class="text-slate-500">Ecco come appariranno le 4 nuove feature nella vista dettaglio</p>
+        </div>
+
+        <!-- Header Card con Earnings Widget -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-4 fade-in">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <h2 class="text-2xl font-bold text-slate-900">AAPL</h2>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">STOCK</span>
+                        <span class="text-sm text-slate-500 bg-slate-100 px-2 py-0.5 rounded">NASDAQ</span>
+                    </div>
+                    <p class="text-slate-600 mb-1">Apple Inc.</p>
+                    <p class="text-xs text-slate-400">ISIN: US0378331005</p>
+                </div>
+            </div>
+
+            <div class="flex items-end gap-6 mb-6">
+                <div>
+                    <span class="text-4xl font-bold text-slate-900">$178.50</span>
+                </div>
+                <span class="inline-flex items-center gap-1 bg-green-50 text-green-600 px-3 py-1.5 rounded-lg font-medium text-lg">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    +2.45%
+                </span>
+            </div>
+
+            <!-- 🆕 EARNINGS CALENDAR WIDGET -->
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4 mb-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-purple-100 p-2 rounded-lg">
+                            <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm text-purple-600 font-medium">Prossimi Earnings</p>
+                            <p class="text-lg font-bold text-slate-900">Gio, Gen 30</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-500">EPS Stimato</p>
+                        <p class="text-xl font-bold text-slate-900">$2.18</p>
+                        <span class="inline-block mt-1 bg-purple-100 text-purple-700 text-xs font-semibold px-2 py-0.5 rounded">
+                            9 giorni
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini metrics -->
+            <div class="grid grid-cols-4 gap-4">
+                <div class="text-center p-3 bg-slate-50 rounded-lg">
+                    <p class="text-xs text-slate-500 mb-1">Apertura</p>
+                    <p class="font-semibold">$176.80</p>
+                </div>
+                <div class="text-center p-3 bg-slate-50 rounded-lg">
+                    <p class="text-xs text-slate-500 mb-1">Max Giorno</p>
+                    <p class="font-semibold">$179.20</p>
+                </div>
+                <div class="text-center p-3 bg-slate-50 rounded-lg">
+                    <p class="text-xs text-slate-500 mb-1">Min Giorno</p>
+                    <p class="font-semibold">$176.10</p>
+                </div>
+                <div class="text-center p-3 bg-slate-50 rounded-lg">
+                    <p class="text-xs text-slate-500 mb-1">Volume</p>
+                    <p class="font-semibold">42.5M</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid con 3 Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <!-- Card 1: Valuation Metrics -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 fade-in">
+                <div class="flex items-center gap-2 mb-4">
+                    <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <h3 class="text-base font-semibold">Metriche di Valutazione</h3>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">Market Cap</span>
+                        <span class="font-semibold">2.75T</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">P/E Ratio</span>
+                        <span class="font-semibold">28.5</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">Forward P/E</span>
+                        <span class="font-semibold">25.3</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">PEG Ratio</span>
+                        <span class="font-semibold">2.15</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">Price to Book</span>
+                        <span class="font-semibold">45.2</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-sm text-slate-600">EPS</span>
+                        <span class="font-semibold">$6.26</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🆕 Card 2: INDICATORI TECNICI -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 fade-in">
+                <div class="flex items-center gap-2 mb-4">
+                    <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    <h3 class="text-base font-semibold">Indicatori Tecnici</h3>
+                </div>
+
+                <!-- RSI Gauge -->
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-slate-600">RSI (14)</span>
+                        <span class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded">
+                            Overbought
+                        </span>
+                    </div>
+
+                    <div class="relative rsi-indicator">
+                        <div class="h-8 gradient-bar rounded-lg relative overflow-hidden">
+                            <div class="rsi-marker" style="left: 72%;"></div>
+                            <div class="absolute inset-0 flex items-center justify-between px-2 text-xs text-white font-semibold">
+                                <span>0</span>
+                                <span>30</span>
+                                <span>70</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-center text-lg font-bold mt-2 text-slate-900">72.5</p>
+                </div>
+
+                <!-- Moving Averages -->
+                <div class="space-y-2 mb-4">
+                    <h4 class="text-sm font-semibold text-slate-700">Moving Averages</h4>
+
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">MA 20</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold">$175.20</span>
+                            <span class="bg-green-100 text-green-600 text-xs font-semibold px-2 py-0.5 rounded border border-green-200">
+                                ↑
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">MA 50</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold">$172.80</span>
+                            <span class="bg-green-100 text-green-600 text-xs font-semibold px-2 py-0.5 rounded border border-green-200">
+                                ↑
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">MA 200</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold">$168.50</span>
+                            <span class="bg-green-100 text-green-600 text-xs font-semibold px-2 py-0.5 rounded border border-green-200">
+                                ↑
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Support/Resistance -->
+                <div class="bg-slate-50 rounded-lg p-3">
+                    <h4 class="text-sm font-semibold text-slate-700 mb-2">Support & Resistance</h4>
+                    <div class="flex justify-between text-sm">
+                        <div>
+                            <p class="text-slate-500 text-xs">Support</p>
+                            <p class="font-bold text-green-600">$165.20</p>
+                            <p class="text-xs text-slate-400">-7.4%</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-slate-500 text-xs">Resistance</p>
+                            <p class="font-bold text-red-600">$185.50</p>
+                            <p class="text-xs text-slate-400">+3.9%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Trading Metrics -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 fade-in">
+                <div class="flex items-center gap-2 mb-4">
+                    <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <h3 class="text-base font-semibold">Dati di Trading</h3>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">Max 52 Settimane</span>
+                        <span class="font-semibold">$198.20</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">Min 52 Settimane</span>
+                        <span class="font-semibold">$164.08</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">Beta</span>
+                        <span class="font-semibold">1.24</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">Dividend Yield</span>
+                        <span class="font-semibold">0.51%</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-sm text-slate-600">Settore</span>
+                        <span class="font-semibold text-sm">Technology</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-sm text-slate-600">Valuta</span>
+                        <span class="font-semibold">USD</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🆕 DIVIDENDI TIMELINE CARD -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-4 fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-slate-900">Storico Dividendi</h3>
+                <span class="text-sm text-slate-500">Ultimi 5 anni</span>
+            </div>
+
+            <!-- Metrics Row -->
+            <div class="grid grid-cols-4 gap-3 mb-6">
+                <div class="bg-slate-50 rounded-xl p-4">
+                    <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Dividendo Annuale</p>
+                    <p class="font-semibold text-slate-900 text-xl">$1.00</p>
+                </div>
+                <div class="bg-green-50 rounded-xl p-4">
+                    <p class="text-xs text-green-700 uppercase tracking-wide mb-1">Yield Corrente</p>
+                    <p class="font-semibold text-green-700 text-xl">0.56%</p>
+                </div>
+                <div class="bg-blue-50 rounded-xl p-4">
+                    <p class="text-xs text-blue-700 uppercase tracking-wide mb-1">Payout Ratio</p>
+                    <p class="font-semibold text-blue-700 text-xl">16.0%</p>
+                </div>
+                <div class="bg-purple-50 rounded-xl p-4">
+                    <p class="text-xs text-purple-700 uppercase tracking-wide mb-1">Crescita 5Y</p>
+                    <p class="font-semibold text-purple-700 text-xl">+7.2%</p>
+                </div>
+            </div>
+
+            <!-- Simple Chart Visualization -->
+            <div class="relative h-48 bg-gradient-to-t from-green-50 to-transparent rounded-lg p-4">
+                <svg class="w-full h-full" viewBox="0 0 800 150">
+                    <!-- Grid lines -->
+                    <line x1="0" y1="30" x2="800" y2="30" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="0" y1="60" x2="800" y2="60" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="0" y1="90" x2="800" y2="90" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="0" y1="120" x2="800" y2="120" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4"/>
+
+                    <!-- Area chart -->
+                    <path d="M 0 120 L 40 118 L 80 115 L 120 112 L 160 108 L 200 105 L 240 100 L 280 95 L 320 92 L 360 88 L 400 85 L 440 80 L 480 75 L 520 70 L 560 68 L 600 65 L 640 62 L 680 58 L 720 55 L 760 50 L 800 48 L 800 150 L 0 150 Z"
+                          fill="url(#gradient)" opacity="0.3"/>
+
+                    <!-- Line -->
+                    <path d="M 0 120 L 40 118 L 80 115 L 120 112 L 160 108 L 200 105 L 240 100 L 280 95 L 320 92 L 360 88 L 400 85 L 440 80 L 480 75 L 520 70 L 560 68 L 600 65 L 640 62 L 680 58 L 720 55 L 760 50 L 800 48"
+                          fill="none" stroke="#10b981" stroke-width="2"/>
+
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#10b981;stop-opacity:0.5" />
+                            <stop offset="100%" style="stop-color:#10b981;stop-opacity:0" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+
+                <!-- Y-axis labels -->
+                <div class="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-slate-400 pr-2">
+                    <span>$0.26</span>
+                    <span>$0.24</span>
+                    <span>$0.22</span>
+                    <span>$0.20</span>
+                    <span>$0.18</span>
+                </div>
+
+                <!-- X-axis labels -->
+                <div class="absolute bottom-0 left-12 right-0 flex justify-between text-xs text-slate-400 pt-2">
+                    <span>2020</span>
+                    <span>2021</span>
+                    <span>2022</span>
+                    <span>2023</span>
+                    <span>2024</span>
+                    <span>2025</span>
+                </div>
+            </div>
+
+            <!-- Next Payment Alert -->
+            <div class="mt-4 bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+                <p class="text-sm text-blue-700">
+                    <span class="font-semibold">📅 Prossima Ex-Dividend Date:</span> 14 Febbraio 2026 • Importo stimato: $0.25
+                </p>
+            </div>
+        </div>
+
+        <!-- 🆕 HEATMAP SETTORIALE -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 fade-in">
+            <div class="mb-4">
+                <h3 class="text-xl font-semibold text-slate-900 mb-1">Heatmap Settoriale S&P 500</h3>
+                <p class="text-sm text-slate-500">Performance giornaliera per settore (dimensione = market cap)</p>
+            </div>
+
+            <!-- Treemap Visualization (Simplified) -->
+            <div class="grid grid-cols-12 gap-2 h-96">
+                <!-- Technology (Grande, verde) -->
+                <div class="col-span-5 row-span-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-2xl font-bold mb-1">Technology</h4>
+                    <p class="text-4xl font-bold">+2.8%</p>
+                    <p class="text-sm opacity-80 mt-2">$12.5T</p>
+                </div>
+
+                <!-- Financial Services (medio, verde chiaro) -->
+                <div class="col-span-4 row-span-2 bg-gradient-to-br from-green-400 to-green-500 rounded-lg p-4 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-xl font-bold mb-1">Financial Services</h4>
+                    <p class="text-3xl font-bold">+1.5%</p>
+                    <p class="text-xs opacity-80 mt-1">$4.2T</p>
+                </div>
+
+                <!-- Healthcare (medio, rosso chiaro) -->
+                <div class="col-span-3 row-span-2 bg-gradient-to-br from-red-400 to-red-500 rounded-lg p-3 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-lg font-bold mb-1">Healthcare</h4>
+                    <p class="text-2xl font-bold">-0.8%</p>
+                    <p class="text-xs opacity-80 mt-1">$3.8T</p>
+                </div>
+
+                <!-- Consumer Cyclical -->
+                <div class="col-span-4 row-span-1 bg-gradient-to-br from-green-300 to-green-400 rounded-lg p-3 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-sm font-bold">Consumer Cyclical</h4>
+                    <p class="text-xl font-bold">+0.9%</p>
+                </div>
+
+                <!-- Industrials -->
+                <div class="col-span-3 row-span-1 bg-gradient-to-br from-red-300 to-red-400 rounded-lg p-3 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-sm font-bold">Industrials</h4>
+                    <p class="text-xl font-bold">-0.4%</p>
+                </div>
+
+                <!-- Energy (rosso) -->
+                <div class="col-span-3 row-span-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-3 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-lg font-bold mb-1">Energy</h4>
+                    <p class="text-2xl font-bold">-2.1%</p>
+                    <p class="text-xs opacity-80 mt-1">$2.1T</p>
+                </div>
+
+                <!-- Consumer Defensive -->
+                <div class="col-span-3 row-span-1 bg-gradient-to-br from-green-200 to-green-300 rounded-lg p-2 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-xs font-bold">Consumer Defensive</h4>
+                    <p class="text-lg font-bold">+0.3%</p>
+                </div>
+
+                <!-- Real Estate -->
+                <div class="col-span-2 row-span-1 bg-gradient-to-br from-red-200 to-red-300 rounded-lg p-2 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-xs font-bold">Real Estate</h4>
+                    <p class="text-sm font-bold">-0.2%</p>
+                </div>
+
+                <!-- Utilities -->
+                <div class="col-span-2 row-span-1 bg-gradient-to-br from-amber-300 to-amber-400 rounded-lg p-2 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-xs font-bold">Utilities</h4>
+                    <p class="text-sm font-bold">+0.1%</p>
+                </div>
+
+                <!-- Communication -->
+                <div class="col-span-3 row-span-1 bg-gradient-to-br from-green-200 to-green-300 rounded-lg p-2 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-xs font-bold">Communication</h4>
+                    <p class="text-lg font-bold">+0.6%</p>
+                </div>
+
+                <!-- Materials -->
+                <div class="col-span-2 row-span-1 bg-gradient-to-br from-amber-200 to-amber-300 rounded-lg p-2 flex flex-col justify-center items-center text-white treemap-cell">
+                    <h4 class="text-xs font-bold">Materials</h4>
+                    <p class="text-sm font-bold">0.0%</p>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="mt-4 flex items-center justify-center gap-6 text-sm">
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-green-500 rounded"></div>
+                    <span class="text-slate-600">Positivo</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-amber-400 rounded"></div>
+                    <span class="text-slate-600">Neutro</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-red-500 rounded"></div>
+                    <span class="text-slate-600">Negativo</span>
+                </div>
+                <div class="ml-6 text-slate-500">
+                    💡 Clicca su un settore per vedere le singole azioni
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <div class="flex items-start gap-3">
+                <svg class="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <h4 class="font-semibold text-blue-900 mb-1">Preview delle 4 nuove feature</h4>
+                    <p class="text-sm text-blue-700">
+                        Questa pagina mostra come appariranno le nuove feature integrate nell'app:
+                    </p>
+                    <ul class="mt-2 space-y-1 text-sm text-blue-700">
+                        <li><strong>1.</strong> Earnings Calendar Widget (banner viola nella header card)</li>
+                        <li><strong>2.</strong> Indicatori Tecnici Card (con RSI gauge, Moving Averages, Support/Resistance)</li>
+                        <li><strong>3.</strong> Dividendi Timeline (storico + metriche + prossima data)</li>
+                        <li><strong>4.</strong> Heatmap Settoriale (treemap interattiva con performance per settore)</li>
+                    </ul>
+                    <p class="mt-3 text-sm text-blue-700">
+                        Tutte le feature mantengono lo stile esistente dell'app: stesso schema colori (slate/blue), stesse card arrotondate, stesso font Inter, stessi componenti UI.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 mt-16 py-8 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+            <p>FinAnalytics - Preview Nuove Feature</p>
+            <p class="mt-1">Design System: Tailwind CSS + shadcn/ui style</p>
+        </div>
+    </footer>
+</body>
+</html>
